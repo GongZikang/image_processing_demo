@@ -3,3 +3,5 @@
 ## 项目计划
 [中文版项目计划](https://github.com/GongZikang/image_processing_demo/blob/main/plan_cn.md)
 [英文版项目计划](https://github.com/GongZikang/image_processing_demo/blob/main/plan.md)
+## 软件需求说明书
+https://github.com/GongZikang/image_processing_demo/blob/main/%E8%BD%AF%E4%BB%B6%E9%9C%80%E6%B1%82%E8%AF%B4%E6%98%8E%E4%B9%A6.docx
