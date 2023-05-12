@@ -17,7 +17,6 @@ img = cv2.resize(img, dsize=None, fx=scale, fy=scale)
 
 print(img.shape)
 
-
 # 图像平滑，使用opencv的cv.blur
 def blur(img):
     blur = cv2.blur(img,(3,3))
