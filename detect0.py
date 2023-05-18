@@ -75,7 +75,73 @@ def detect(save_img=False):
         #agnostic_nms
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         #t2 = torch_utils.time_synchronized()
+        
+        if classify:
+            pred,plat_num = apply_classifier(pred, modelc, img, im0s)
 
+        # Process detections
+        for i, det in enumerate(pred):  # detections per image
+            if webcam:  # batch_size >= 1
+                p, s, im0 = path[i], '%g: ' % i, im0s[i].copy()
+            else:
+                p, s, im0 = path, '', im0s
+
+            save_path = str(Path(out) / Path(p).name)
+            txt_path = str(Path(out) / Path(p).stem) + ('_%g' % dataset.frame if dataset.mode == 'video' else '')
+            s += '%gx%g ' % img.shape[2:]  # print string
+            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            if det is not None and len(det):
+                # Rescale boxes from img_size to im0 size
+                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+
+                # Print results
+                for c in det[:, 5].unique():
+                    n = (det[:, 5] == c).sum()  # detections per class
+                    s += '%g %ss, ' % (n, names[int(c)])  # add to string
+
+                # Write results
+                for de,lic_plat in zip(det,plat_num):
+                    *xyxy, conf, cls=de
+                    if save_txt:  # Write to file
+                        # xyxy turn to xywh
+                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        with open(txt_path + '.txt', 'a') as f:
+                            f.write(('%g ' * 5 + '\n') % (cls, xywh))  # label format
+
+                    if save_img or view_img:  # Add bbox to image
+                        # label = '%s %.2f' % (names[int(cls)], conf)
+                        lb = ""
+                        for a,i in enumerate(lic_plat):
+                            lb += CHARS[int(i)]
+                        label = '%s %.2f' % (lb, conf)
+                        im0 = plot_one_box(xyxy, im0, label=label, color=(0,0,0), line_thickness=3)#label color
+                        # print(type(im0))
+
+
+            # Save results (image with detections)
+            if save_img:
+                if dataset.mode == 'images':
+                    im0 = np.array(im0) # tonarray
+                    cv2.imwrite(save_path, im0)
+                    
+                else:
+                    if vid_path != save_path:  # new video
+                        vid_path = save_path
+                        if isinstance(vid_writer, cv2.VideoWriter):
+                            vid_writer.release()  # release previous video writer
+
+                        fourcc = 'mp4v'  # output video codec
+                        fps = vid_cap.get(cv2.CAP_PROP_FPS)
+                        w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                        h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                        vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
+                    im0 = np.array(im0) #tonarray
+                    vid_writer.write(im0)
+
+    if save_txt or save_img:
+        print('Results saved to %s' % os.getcwd() + os.sep + out)
+        if platform == 'darwin':  # MacOS
+            os.system('open ' + save_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
