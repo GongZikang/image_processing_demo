@@ -56,8 +56,8 @@ def linear_trans(img):
 
 # 下面用于测试函数效果
 # test_img = blur(img)
-#test_img = warp(img,250,100)
-#cv2.imshow("image", test_img)
+# test_img = warp(img,250,100)
+# cv2.imshow("image", test_img)
 test_linear = linear_trans(img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
