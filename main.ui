@@ -333,7 +333,7 @@
                </layout>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_8">
+               <widget class="QPushButton" name="b_rotate_image">
                 <property name="text">
                  <string>图像旋转</string>
                 </property>
