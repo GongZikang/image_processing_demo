@@ -13,12 +13,14 @@ class ImageProcessingWindow(QMainWindow):
         self.ui = uic.loadUi("main.ui")
         # 加载初始提醒图片
         pix = QPixmap(r'init.jpg')
+        self.image = cv2.imread(r'init.jpg')
         self.ui.image_label.setPixmap(pix.scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
 
         self.ui.b_open_image.clicked.connect(self.open_image)
         self.ui.b_save_image.clicked.connect(self.save_image)
         self.ui.b_vertical_flip.clicked.connect(self.vertical_flip)
         self.ui.b_horizontal_flip.clicked.connect(self.horizontal_flip)
+        self.ui.b_rotate_image.clicked.connect(self.rotate_image)
 
     def show_cv_image(self, image):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -55,6 +57,19 @@ class ImageProcessingWindow(QMainWindow):
             flipped_image = cv2.flip(self.image, 1)
             self.image = flipped_image
             self.show_cv_image(self.image)
+
+    def rotate_image(self):
+        if self.image is not None:
+            angle, ok = QInputDialog.getInt(self, 'Rotate Image', '输入要旋转的角度（顺时针为正）:')
+
+            if ok:
+                rows, cols, _ = self.image.shape
+                rotation_matrix = cv2.getRotationMatrix2D((cols / 2, rows / 2), -angle, 1)
+                rotated_image = cv2.warpAffine(self.image, rotation_matrix, (cols, rows))
+                self.image = rotated_image
+                self.show_cv_image(self.image)
+
+
 
 
 if __name__ == '__main__':
