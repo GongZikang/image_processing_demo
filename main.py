@@ -1,5 +1,6 @@
 import sys
 import cv2
+import numpy as np
 from PyQt5 import uic
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFileDialog, QAction, QInputDialog
 from PyQt5.QtGui import QPixmap, QImage
@@ -21,6 +22,7 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.b_vertical_flip.clicked.connect(self.vertical_flip)
         self.ui.b_horizontal_flip.clicked.connect(self.horizontal_flip)
         self.ui.b_rotate_image.clicked.connect(self.rotate_image)
+        self.ui.pushButton_10.clicked.connect(self.crop_image)
 
     def show_cv_image(self, image):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -69,7 +71,60 @@ class ImageProcessingWindow(QMainWindow):
                 self.image = rotated_image
                 self.show_cv_image(self.image)
 
+    #图像裁剪
+    def crop_image(self):
+        if self.image is not None:
+            roi = cv2.selectROI('Select ROI', self.image, fromCenter=False, showCrosshair=True)
+            if roi != (0, 0, 0, 0):
+                cropped_image = self.image[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
+                self.image = cropped_image
+                self.show_cv_image(self.image)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
 
+
+    #色彩图转灰度图
+    def convert_to_gray(self):
+        if self.image is not None:
+            gray_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+            cv2.imshow('Gray Image', gray_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+    #高斯滤波
+    def apply_gaussian_blur(self):
+        if self.image is not None:
+            ksize, ok = QInputDialog.getInt(self, 'Gaussian Blur', 'Enter kernel size (odd number):')
+            if ok:
+                blurred_image = cv2.GaussianBlur(self.image, (ksize, ksize), 0)
+                self.show_cv_image(blurred_image)
+
+    #直方图均值化
+    def apply_histogram_equalization(self):
+        if self.image is not None:
+            gray_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+            equalized_image = cv2.equalizeHist(gray_image)
+            colored_equalized_image = cv2.cvtColor(equalized_image, cv2.COLOR_GRAY2BGR)
+            self.show_cv_image(colored_equalized_image)
+
+    #线性变化
+    def apply_linear_transform(self):
+        if self.image is not None:
+            alpha, ok = QInputDialog.getDouble(self, 'Linear Transform', 'Enter alpha value:')
+            if ok:
+                beta, ok = QInputDialog.getDouble(self, 'Linear Transform', 'Enter beta value:')
+                if ok:
+                    transformed_image = cv2.convertScaleAbs(self.image, alpha=alpha, beta=beta)
+                    self.show_cv_image(transformed_image)
+
+    #伽马变换
+    def apply_gamma_transform(self):
+        if self.image is not None:
+            gamma, ok = QInputDialog.getDouble(self, 'Gamma Transform', 'Enter gamma value:')
+            if ok:
+                gamma_corrected = np.power(self.image / 255.0, gamma)
+                gamma_corrected = (gamma_corrected * 255).astype(np.uint8)
+                self.show_cv_image(gamma_corrected)
 
 
 if __name__ == '__main__':
