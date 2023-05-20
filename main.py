@@ -17,21 +17,25 @@ class ImageProcessingWindow(QMainWindow):
 
         self.ui.b_open_image.clicked.connect(self.open_image)
         self.ui.b_save_image.clicked.connect(self.save_image)
+        self.ui.b_vertical_flip.clicked.connect(self.vertical_flip)
+        self.ui.b_horizontal_flip.clicked.connect(self.horizontal_flip)
+
+    def show_cv_image(self, image):
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        height, width, channel = image_rgb.shape
+        qimage = QImage(image_rgb.data, width, height, width * channel, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qimage)
+
+        self.ui.image_label.setPixmap(pixmap.scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
 
     def open_image(self):
         file_dialog = QFileDialog()
         file_path = file_dialog.getOpenFileName(self, 'Open Image')[0]
         if file_path:
             image = cv2.imread(file_path)
-            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            height, width, channel = image_rgb.shape
-            print(height+width+channel)
-            qimage = QImage(image_rgb.data, width, height, width * channel, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(qimage)
-
-            self.ui.image_label.setPixmap(pixmap.scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
-
             self.image = image
+            self.show_cv_image(image)
+
     def save_image(self):
         if self.image is not None:
             file_dialog = QFileDialog()
@@ -40,9 +44,18 @@ class ImageProcessingWindow(QMainWindow):
             if file_path:
                 cv2.imwrite(file_path, self.image)
 
-# class ImageProcessingApp(QWidget):
-#     def __init__(self):
-#         super().__init__()
+    def vertical_flip(self):
+        if self.image is not None:
+            flipped_image = cv2.flip(self.image, 0)
+            self.image = flipped_image
+            self.show_cv_image(self.image)
+
+    def horizontal_flip(self):
+        if self.image is not None:
+            flipped_image = cv2.flip(self.image, 1)
+            self.image = flipped_image
+            self.show_cv_image(self.image)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -50,7 +63,5 @@ if __name__ == '__main__':
     main_window = ImageProcessingWindow()
     main_window.ui.show()
 
-    # image_app = ImageProcessingApp()
-    # image_app.show()
 
     sys.exit(app.exec_())

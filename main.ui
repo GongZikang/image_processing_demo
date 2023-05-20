@@ -317,14 +317,14 @@
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_10">
                 <item>
-                 <widget class="QPushButton" name="pushButton_7">
+                 <widget class="QPushButton" name="b_vertical_flip">
                   <property name="text">
                    <string>垂直镜像</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButton_6">
+                 <widget class="QPushButton" name="b_horizontal_flip">
                   <property name="text">
                    <string>水平镜像</string>
                   </property>
