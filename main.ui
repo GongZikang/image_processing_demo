@@ -387,9 +387,9 @@
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_15">
                 <item>
-                 <widget class="QPushButton" name="pushButton_5">
+                 <widget class="QPushButton" name="b_linear_transform">
                   <property name="text">
-                   <string>亮度调节</string>
+                   <string>线性变化</string>
                   </property>
                  </widget>
                 </item>

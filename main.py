@@ -24,6 +24,7 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.b_rotate_image.clicked.connect(self.rotate_image)
         self.ui.b_crop_image.clicked.connect(self.crop_image)
         self.ui.b_gaussian_blur.clicked.connect(self.apply_gaussian_blur)
+        self.ui.b_linear_transform.clicked.connect(self.apply_linear_transform)
 
     def show_cv_image(self, image):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
