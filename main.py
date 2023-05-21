@@ -2,7 +2,7 @@ import sys
 import cv2
 import numpy as np
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFileDialog, QAction, QInputDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFileDialog, QAction, QInputDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 
@@ -97,8 +97,12 @@ class ImageProcessingWindow(QMainWindow):
         if self.image is not None:
             ksize, ok = QInputDialog.getInt(self, 'Gaussian Blur', '请输入核大小 (奇数):')
             if ok:
-                blurred_image = cv2.GaussianBlur(self.image, (ksize, ksize), 0)
-                self.show_cv_image(blurred_image)
+                # 判断核大小是正奇数
+                if ksize < 1 or ksize % 2 == 0:
+                    QMessageBox.warning(self, "警告", "请输入正奇数！如1、3、5等", QMessageBox.Cancel)
+                else:
+                    blurred_image = cv2.GaussianBlur(self.image, (ksize, ksize), 0)
+                    self.show_cv_image(blurred_image)
 
     #直方图均值化
     def apply_histogram_equalization(self):
