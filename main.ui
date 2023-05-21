@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>904</width>
+    <width>1025</width>
     <height>654</height>
    </rect>
   </property>
@@ -137,39 +137,39 @@
                       <item>
                        <layout class="QHBoxLayout" name="horizontalLayout_12">
                         <item>
-                         <widget class="QLineEdit" name="lineEdit"/>
+                         <widget class="QLineEdit" name="k1"/>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="lineEdit_2"/>
+                         <widget class="QLineEdit" name="k2"/>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="lineEdit_3"/>
+                         <widget class="QLineEdit" name="k3"/>
                         </item>
                        </layout>
                       </item>
                       <item>
                        <layout class="QHBoxLayout" name="horizontalLayout_13">
                         <item>
-                         <widget class="QLineEdit" name="lineEdit_4"/>
+                         <widget class="QLineEdit" name="k4"/>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="lineEdit_5"/>
+                         <widget class="QLineEdit" name="k5"/>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="lineEdit_6"/>
+                         <widget class="QLineEdit" name="k6"/>
                         </item>
                        </layout>
                       </item>
                       <item>
                        <layout class="QHBoxLayout" name="horizontalLayout_14">
                         <item>
-                         <widget class="QLineEdit" name="lineEdit_7"/>
+                         <widget class="QLineEdit" name="k7"/>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="lineEdit_8"/>
+                         <widget class="QLineEdit" name="k8"/>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="lineEdit_9"/>
+                         <widget class="QLineEdit" name="k9"/>
                         </item>
                        </layout>
                       </item>
@@ -202,7 +202,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="lineEdit_10">
+                     <widget class="QLineEdit" name="stride_box">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                         <horstretch>2</horstretch>
@@ -313,7 +313,7 @@
              <property name="title">
               <string>几何变换</string>
              </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_16">
+             <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_10">
                 <item>
@@ -333,11 +333,22 @@
                </layout>
               </item>
               <item>
-               <widget class="QPushButton" name="b_rotate_image">
-                <property name="text">
-                 <string>图像旋转</string>
-                </property>
-               </widget>
+               <layout class="QVBoxLayout" name="verticalLayout">
+                <item>
+                 <widget class="QPushButton" name="b_crop_image">
+                  <property name="text">
+                   <string>图像裁剪</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="b_rotate_image">
+                  <property name="text">
+                   <string>图像旋转</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
               <item>
                <layout class="QVBoxLayout" name="verticalLayout_11">
@@ -397,7 +408,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButton_2">
+                 <widget class="QPushButton" name="b_gaussian_blur">
                   <property name="text">
                    <string>图像平滑</string>
                   </property>
