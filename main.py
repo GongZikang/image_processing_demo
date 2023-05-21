@@ -22,7 +22,8 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.b_vertical_flip.clicked.connect(self.vertical_flip)
         self.ui.b_horizontal_flip.clicked.connect(self.horizontal_flip)
         self.ui.b_rotate_image.clicked.connect(self.rotate_image)
-        self.ui.pushButton_10.clicked.connect(self.crop_image)
+        self.ui.b_crop_image.clicked.connect(self.crop_image)
+        self.ui.b_gaussian_blur.clicked.connect(self.apply_gaussian_blur)
 
     def show_cv_image(self, image):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -74,7 +75,7 @@ class ImageProcessingWindow(QMainWindow):
     #图像裁剪
     def crop_image(self):
         if self.image is not None:
-            roi = cv2.selectROI('Select ROI', self.image, fromCenter=False, showCrosshair=True)
+            roi = cv2.selectROI('请用鼠标框选需要裁剪的区域，按回车确认！', self.image, fromCenter=False, showCrosshair=True)
             if roi != (0, 0, 0, 0):
                 cropped_image = self.image[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
                 self.image = cropped_image
@@ -94,7 +95,7 @@ class ImageProcessingWindow(QMainWindow):
     #高斯滤波
     def apply_gaussian_blur(self):
         if self.image is not None:
-            ksize, ok = QInputDialog.getInt(self, 'Gaussian Blur', 'Enter kernel size (odd number):')
+            ksize, ok = QInputDialog.getInt(self, 'Gaussian Blur', '请输入核大小 (奇数):')
             if ok:
                 blurred_image = cv2.GaussianBlur(self.image, (ksize, ksize), 0)
                 self.show_cv_image(blurred_image)
@@ -132,6 +133,5 @@ if __name__ == '__main__':
 
     main_window = ImageProcessingWindow()
     main_window.ui.show()
-
 
     sys.exit(app.exec_())
