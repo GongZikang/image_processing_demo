@@ -1,0 +1,18 @@
+import unittest
+from testmodel import Test_Case_01
+from XTestRunner import HTMLTestRunner
+
+suite = unittest.TestSuite()
+#单独添加用例
+suite.addTest(Test_Case_01('test_add_01'))
+suite.addTest(Test_Case_01('test_add_02'))
+
+# 批量添加用例, addTest()添加的次数根据Test_Case_01中的测试用例个数决定，这里是添加2次
+suite.addTest(unittest.makeSuite(Test_Case_01))
+
+runner = unittest.TextTestRunner()
+runner.run(suite)
+
+# 生成HTML报告
+with open('./result.html', "wb") as fp :
+    HTMLTestRunner(stream=fp, verbosity=2, title="XXX报告")
