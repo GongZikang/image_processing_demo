@@ -25,7 +25,7 @@
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout_9">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0">
+        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="5,1,8">
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,0,0">
            <property name="rightMargin">
@@ -40,57 +40,30 @@
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_11">
                 <item>
-                 <spacer name="horizontalSpacer_2">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
+                 <widget class="QPushButton" name="b_open_image">
+                  <property name="maximumSize">
                    <size>
-                    <width>40</width>
-                    <height>20</height>
+                    <width>200</width>
+                    <height>16777215</height>
                    </size>
                   </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="b_open_image">
                   <property name="text">
                    <string>打开图片</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <spacer name="horizontalSpacer">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
+                 <widget class="QPushButton" name="b_save_image">
+                  <property name="maximumSize">
                    <size>
-                    <width>40</width>
-                    <height>20</height>
+                    <width>200</width>
+                    <height>16777215</height>
                    </size>
                   </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="b_save_image">
                   <property name="text">
                    <string>保存图片</string>
                   </property>
                  </widget>
-                </item>
-                <item>
-                 <spacer name="horizontalSpacer_3">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
                 </item>
                </layout>
               </widget>
@@ -137,39 +110,102 @@
                       <item>
                        <layout class="QHBoxLayout" name="horizontalLayout_12">
                         <item>
-                         <widget class="QLineEdit" name="k1"/>
+                         <widget class="QLineEdit" name="k1">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="k2"/>
+                         <widget class="QLineEdit" name="k2">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="k3"/>
+                         <widget class="QLineEdit" name="k3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                        </layout>
                       </item>
                       <item>
                        <layout class="QHBoxLayout" name="horizontalLayout_13">
                         <item>
-                         <widget class="QLineEdit" name="k4"/>
+                         <widget class="QLineEdit" name="k4">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="k5"/>
+                         <widget class="QLineEdit" name="k5">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="k6"/>
+                         <widget class="QLineEdit" name="k6">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                        </layout>
                       </item>
                       <item>
                        <layout class="QHBoxLayout" name="horizontalLayout_14">
                         <item>
-                         <widget class="QLineEdit" name="k7"/>
+                         <widget class="QLineEdit" name="k7">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="k8"/>
+                         <widget class="QLineEdit" name="k8">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                         <item>
-                         <widget class="QLineEdit" name="k9"/>
+                         <widget class="QLineEdit" name="k9">
+                          <property name="maximumSize">
+                           <size>
+                            <width>100</width>
+                            <height>16777215</height>
+                           </size>
+                          </property>
+                         </widget>
                         </item>
                        </layout>
                       </item>
@@ -209,6 +245,12 @@
                         <verstretch>2</verstretch>
                        </sizepolicy>
                       </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>100</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
                      </widget>
                     </item>
                     <item>
@@ -225,12 +267,18 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="pushButton_16">
+                     <widget class="QPushButton" name="b_start_conv">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                         <horstretch>1</horstretch>
                         <verstretch>1</verstretch>
                        </sizepolicy>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>120</width>
+                        <height>16777215</height>
+                       </size>
                       </property>
                       <property name="text">
                        <string>进行卷积</string>
@@ -259,34 +307,51 @@
                     </item>
                     <item>
                      <widget class="QPushButton" name="pushButton_11">
+                      <property name="maximumSize">
+                       <size>
+                        <width>150</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
                       <property name="text">
                        <string>高斯模糊</string>
                       </property>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="pushButton_12">
-                      <property name="text">
-                       <string>锐化</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
                      <widget class="QPushButton" name="pushButton_13">
+                      <property name="maximumSize">
+                       <size>
+                        <width>150</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
                       <property name="text">
                        <string>拉普拉斯</string>
                       </property>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="pushButton_14">
+                     <widget class="QPushButton" name="b_x_sobel">
+                      <property name="maximumSize">
+                       <size>
+                        <width>150</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
                       <property name="text">
                        <string>垂直Sobel</string>
                       </property>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="pushButton_15">
+                     <widget class="QPushButton" name="b_y_sobel">
+                      <property name="maximumSize">
+                       <size>
+                        <width>150</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
                       <property name="text">
                        <string>水平Sobel</string>
                       </property>
@@ -318,6 +383,12 @@
                <layout class="QVBoxLayout" name="verticalLayout_10">
                 <item>
                  <widget class="QPushButton" name="b_vertical_flip">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>垂直镜像</string>
                   </property>
@@ -325,6 +396,12 @@
                 </item>
                 <item>
                  <widget class="QPushButton" name="b_horizontal_flip">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>水平镜像</string>
                   </property>
@@ -336,6 +413,12 @@
                <layout class="QVBoxLayout" name="verticalLayout">
                 <item>
                  <widget class="QPushButton" name="b_crop_image">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>图像裁剪</string>
                   </property>
@@ -343,6 +426,12 @@
                 </item>
                 <item>
                  <widget class="QPushButton" name="b_rotate_image">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>图像旋转</string>
                   </property>
@@ -354,6 +443,12 @@
                <layout class="QVBoxLayout" name="verticalLayout_11">
                 <item>
                  <widget class="QPushButton" name="pushButton_10">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>图像平移</string>
                   </property>
@@ -361,6 +456,12 @@
                 </item>
                 <item>
                  <widget class="QPushButton" name="pushButton_9">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>图像缩放</string>
                   </property>
@@ -388,20 +489,25 @@
                <layout class="QHBoxLayout" name="horizontalLayout_15">
                 <item>
                  <widget class="QPushButton" name="b_linear_transform">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>线性变化</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButton_4">
-                  <property name="text">
-                   <string>对比度调节</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
                  <widget class="QPushButton" name="b_convert_to_gray">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>转为灰度图</string>
                   </property>
@@ -409,6 +515,12 @@
                 </item>
                 <item>
                  <widget class="QPushButton" name="b_sharpen">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>图像锐化</string>
                   </property>
@@ -416,6 +528,12 @@
                 </item>
                 <item>
                  <widget class="QPushButton" name="b_gaussian_blur">
+                  <property name="maximumSize">
+                   <size>
+                    <width>150</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>图像平滑</string>
                   </property>
@@ -441,6 +559,12 @@
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
               <widget class="QGroupBox" name="groupBox">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="title">
                 <string>图片显示：</string>
                </property>
@@ -448,14 +572,14 @@
                 <item>
                  <widget class="QLabel" name="image_label">
                   <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>5</horstretch>
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
                   <property name="minimumSize">
                    <size>
-                    <width>600</width>
+                    <width>800</width>
                     <height>400</height>
                    </size>
                   </property>

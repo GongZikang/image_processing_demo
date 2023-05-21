@@ -28,6 +28,20 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.b_sharpen.clicked.connect(self.sharpen)
         self.ui.b_linear_transform.clicked.connect(self.apply_linear_transform)
 
+        # 设置默认卷积核参数
+        self.ui.k1.setText('0')
+        self.ui.k2.setText('0')
+        self.ui.k3.setText('0')
+        self.ui.k4.setText('0')
+        self.ui.k5.setText('1')
+        self.ui.k6.setText('0')
+        self.ui.k7.setText('0')
+        self.ui.k8.setText('0')
+        self.ui.k9.setText('0')
+        self.ui.b_start_conv.clicked.connect(self.start_conv)
+        self.ui.b_x_sobel.clicked.connect(self.set_x_sobel)
+        self.ui.b_y_sobel.clicked.connect(self.set_y_sobel)
+
 
     def show_cv_image(self, image):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -143,6 +157,55 @@ class ImageProcessingWindow(QMainWindow):
                 gamma_corrected = np.power(self.image / 255.0, gamma)
                 gamma_corrected = (gamma_corrected * 255).astype(np.uint8)
                 self.show_cv_image(gamma_corrected)
+
+    def conv(self, conv_k, stride):
+        # conv_k = np.array([[0, -1, 0],
+        #                       [-1, 5, -1],
+        #                       [0, -1, 0]], dtype=np.float32)
+        s_image = cv2.filter2D(self.image, cv2.CV_32F, conv_k)
+        self.image = cv2.convertScaleAbs(s_image)
+        self.show_cv_image(self.image)
+
+    def start_conv(self):
+        try:
+            k1 = float(self.ui.k1.text())
+            k2 = float(self.ui.k2.text())
+            k3 = float(self.ui.k3.text())
+            k4 = float(self.ui.k4.text())
+            k5 = float(self.ui.k5.text())
+            k6 = float(self.ui.k6.text())
+            k7 = float(self.ui.k7.text())
+            k8 = float(self.ui.k8.text())
+            k9 = float(self.ui.k9.text())
+            conv_k = np.array([[k1, k2, k3],
+                               [k4, k5, k6],
+                               [k7, k8, k9]], dtype=np.float32)
+            self.conv(conv_k, 1)
+        except ValueError:
+            QMessageBox.warning(self, "警告", "卷积核参数请输入阿拉伯数字！", QMessageBox.Cancel)
+
+    def set_x_sobel(self):
+        self.ui.k1.setText('-1')
+        self.ui.k2.setText('0')
+        self.ui.k3.setText('1')
+        self.ui.k4.setText('-2')
+        self.ui.k5.setText('0')
+        self.ui.k6.setText('2')
+        self.ui.k7.setText('-1')
+        self.ui.k8.setText('0')
+        self.ui.k9.setText('1')
+
+    def set_y_sobel(self):
+        self.ui.k1.setText('1')
+        self.ui.k2.setText('2')
+        self.ui.k3.setText('1')
+        self.ui.k4.setText('0')
+        self.ui.k5.setText('0')
+        self.ui.k6.setText('0')
+        self.ui.k7.setText('-1')
+        self.ui.k8.setText('-2')
+        self.ui.k9.setText('-1')
+
 
 
 if __name__ == '__main__':
