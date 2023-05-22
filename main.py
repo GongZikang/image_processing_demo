@@ -2,9 +2,11 @@ import sys
 import cv2
 import numpy as np
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QFileDialog, QAction, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QInputDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
+
+
 
 class ImageProcessingWindow(QMainWindow):
     def __init__(self):
@@ -16,7 +18,7 @@ class ImageProcessingWindow(QMainWindow):
         pix = QPixmap(r'init.jpg')
         self.image = cv2.imread(r'init.jpg')
         self.ui.image_label.setPixmap(pix.scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
-
+        self.ui.b_show_image.clicked.connect(self.show_image)
         self.ui.b_open_image.clicked.connect(self.open_image)
         self.ui.b_save_image.clicked.connect(self.save_image)
         self.ui.b_vertical_flip.clicked.connect(self.vertical_flip)
@@ -27,6 +29,8 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.b_gaussian_blur.clicked.connect(self.apply_gaussian_blur)
         self.ui.b_sharpen.clicked.connect(self.sharpen)
         self.ui.b_linear_transform.clicked.connect(self.apply_linear_transform)
+        self.ui.b_gamma_transform.clicked.connect(self.apply_gamma_transform)
+        self.ui.b_histogram_equalization.clicked.connect(self.apply_histogram_equalization)
 
         # 设置默认卷积核参数
         self.ui.k1.setText('0')
@@ -41,7 +45,8 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.b_start_conv.clicked.connect(self.start_conv)
         self.ui.b_x_sobel.clicked.connect(self.set_x_sobel)
         self.ui.b_y_sobel.clicked.connect(self.set_y_sobel)
-
+        self.ui.b_set_gaussian.clicked.connect(self.set_gaussian)
+        self.ui.b_set_laplacian.clicked.connect(self.set_laplacian)
 
     def show_cv_image(self, image):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -67,6 +72,9 @@ class ImageProcessingWindow(QMainWindow):
             if file_path:
                 cv2.imwrite(file_path, self.image)
 
+    def show_image(self):
+        cv2.imshow("Result", self.image)
+
     def vertical_flip(self):
         if self.image is not None:
             flipped_image = cv2.flip(self.image, 0)
@@ -90,19 +98,19 @@ class ImageProcessingWindow(QMainWindow):
                 self.image = rotated_image
                 self.show_cv_image(self.image)
 
-    #图像裁剪
+    # 图像裁剪
     def crop_image(self):
         if self.image is not None:
-            roi = cv2.selectROI('Please choose the scope, then press enter!', self.image, fromCenter=False, showCrosshair=True)
+            roi = cv2.selectROI('Please choose the scope, then press enter!', self.image, fromCenter=False,
+                                showCrosshair=True)
             if roi != (0, 0, 0, 0):
-                cropped_image = self.image[int(roi[1]):int(roi[1]+roi[3]), int(roi[0]):int(roi[0]+roi[2])]
+                cropped_image = self.image[int(roi[1]):int(roi[1] + roi[3]), int(roi[0]):int(roi[0] + roi[2])]
                 self.image = cropped_image
                 self.show_cv_image(self.image)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
 
-
-    #色彩图转灰度图
+    # 色彩图转灰度图
     def convert_to_gray(self):
         if self.image is not None:
             gray_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
@@ -112,7 +120,7 @@ class ImageProcessingWindow(QMainWindow):
             # cv2.waitKey(0)
             # cv2.destroyAllWindows()
 
-    #高斯滤波
+    # 高斯滤波
     def apply_gaussian_blur(self):
         if self.image is not None:
             ksize, ok = QInputDialog.getInt(self, 'Gaussian Blur', '请输入核大小 (奇数):')
@@ -123,6 +131,7 @@ class ImageProcessingWindow(QMainWindow):
                 else:
                     blurred_image = cv2.GaussianBlur(self.image, (ksize, ksize), 0)
                     self.show_cv_image(blurred_image)
+
     # 图像锐化
     def sharpen(self):
         sharpen_k = np.array([[0, -1, 0],
@@ -131,15 +140,17 @@ class ImageProcessingWindow(QMainWindow):
         s_image = cv2.filter2D(self.image, cv2.CV_32F, sharpen_k)
         self.image = cv2.convertScaleAbs(s_image)
         self.show_cv_image(self.image)
-    #直方图均值化
+
+    # 直方图均值化
     def apply_histogram_equalization(self):
         if self.image is not None:
             gray_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
             equalized_image = cv2.equalizeHist(gray_image)
             colored_equalized_image = cv2.cvtColor(equalized_image, cv2.COLOR_GRAY2BGR)
+            self.image = colored_equalized_image
             self.show_cv_image(colored_equalized_image)
 
-    #线性变化
+    # 线性变化
     def apply_linear_transform(self):
         if self.image is not None:
             alpha, ok = QInputDialog.getDouble(self, 'Linear Transform', 'Enter alpha value:')
@@ -149,19 +160,16 @@ class ImageProcessingWindow(QMainWindow):
                     transformed_image = cv2.convertScaleAbs(self.image, alpha=alpha, beta=beta)
                     self.show_cv_image(transformed_image)
 
-    #伽马变换
+    # 伽马变换
     def apply_gamma_transform(self):
         if self.image is not None:
-            gamma, ok = QInputDialog.getDouble(self, 'Gamma Transform', 'Enter gamma value:')
+            gamma, ok = QInputDialog.getDouble(self, 'Gamma Transform', '输入伽马值:')
             if ok:
                 gamma_corrected = np.power(self.image / 255.0, gamma)
-                gamma_corrected = (gamma_corrected * 255).astype(np.uint8)
-                self.show_cv_image(gamma_corrected)
+                self.image = (gamma_corrected * 255).astype(np.uint8)
+                self.show_cv_image(self.image)
 
     def conv(self, conv_k, stride):
-        # conv_k = np.array([[0, -1, 0],
-        #                       [-1, 5, -1],
-        #                       [0, -1, 0]], dtype=np.float32)
         s_image = cv2.filter2D(self.image, cv2.CV_32F, conv_k)
         self.image = cv2.convertScaleAbs(s_image)
         self.show_cv_image(self.image)
@@ -206,6 +214,27 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.k8.setText('-2')
         self.ui.k9.setText('-1')
 
+    def set_laplacian(self):
+        self.ui.k1.setText('1')
+        self.ui.k2.setText('1')
+        self.ui.k3.setText('1')
+        self.ui.k4.setText('1')
+        self.ui.k5.setText('-8')
+        self.ui.k6.setText('1')
+        self.ui.k7.setText('1')
+        self.ui.k8.setText('1')
+        self.ui.k9.setText('1')
+
+    def set_gaussian(self):
+        self.ui.k1.setText('0.1')
+        self.ui.k2.setText('0.1')
+        self.ui.k3.setText('0.1')
+        self.ui.k4.setText('0.1')
+        self.ui.k5.setText('0.2')
+        self.ui.k6.setText('0.1')
+        self.ui.k7.setText('0.1')
+        self.ui.k8.setText('0.1')
+        self.ui.k9.setText('0.1')
 
 
 if __name__ == '__main__':
