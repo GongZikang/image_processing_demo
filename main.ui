@@ -634,58 +634,53 @@
              <property name="title">
               <string>功能按钮</string>
              </property>
-             <widget class="QPushButton" name="b_choose_pic">
-              <property name="geometry">
-               <rect>
-                <x>60</x>
-                <y>100</y>
-                <width>75</width>
-                <height>23</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>选择图片</string>
-              </property>
-             </widget>
-             <widget class="QPushButton" name="b_detect">
-              <property name="geometry">
-               <rect>
-                <x>200</x>
-                <y>120</y>
-                <width>75</width>
-                <height>23</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>进行检测</string>
-              </property>
-             </widget>
-             <widget class="QPushButton" name="pushButton_3">
-              <property name="geometry">
-               <rect>
-                <x>40</x>
-                <y>200</y>
-                <width>75</width>
-                <height>23</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>PushButton</string>
-              </property>
-             </widget>
-             <widget class="QPushButton" name="pushButton_4">
-              <property name="geometry">
-               <rect>
-                <x>210</x>
-                <y>210</y>
-                <width>75</width>
-                <height>23</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>PushButton</string>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="verticalLayout_15">
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_19">
+                <item>
+                 <widget class="QLabel" name="label">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>检测到的车牌号为：</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="license_plate">
+                  <property name="minimumSize">
+                   <size>
+                    <width>160</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_21">
+                <item>
+                 <widget class="QPushButton" name="b_choose_pic">
+                  <property name="text">
+                   <string>选择图片</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="b_detect">
+                  <property name="text">
+                   <string>进行检测</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
@@ -693,19 +688,21 @@
              <property name="title">
               <string>原始图片</string>
              </property>
-             <widget class="QLabel" name="ori_pic">
-              <property name="geometry">
-               <rect>
-                <x>120</x>
-                <y>130</y>
-                <width>54</width>
-                <height>12</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>TextLabel</string>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="verticalLayout_14">
+              <item>
+               <widget class="QLabel" name="ori_pic">
+                <property name="minimumSize">
+                 <size>
+                  <width>480</width>
+                  <height>480</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>请打开需要检测的图片</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
           </layout>
@@ -727,7 +724,7 @@
                </rect>
               </property>
               <property name="text">
-               <string>TextLabel</string>
+               <string>此处显示中间特征图</string>
               </property>
              </widget>
             </widget>
@@ -737,19 +734,21 @@
              <property name="title">
               <string>最终结果</string>
              </property>
-             <widget class="QLabel" name="res_pic">
-              <property name="geometry">
-               <rect>
-                <x>100</x>
-                <y>180</y>
-                <width>54</width>
-                <height>12</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>TextLabel</string>
-              </property>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_20">
+              <item>
+               <widget class="QLabel" name="res_pic">
+                <property name="minimumSize">
+                 <size>
+                  <width>480</width>
+                  <height>480</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>此处显示检测后结果</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
           </layout>
