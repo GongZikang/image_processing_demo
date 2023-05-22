@@ -7,6 +7,19 @@ from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 
 
+import argparse
+import threading
+import os.path as osp
+import torch.backends.cudnn as cudnn
+from models.experimental import *
+from utils.datasets import *
+from utils.utils import *
+from models.LPRNet import *
+from utils.torch_utils import time_sync
+from qt_material import apply_stylesheet
+import os
+
+
 
 class ImageProcessingWindow(QMainWindow):
     def __init__(self):
@@ -14,6 +27,7 @@ class ImageProcessingWindow(QMainWindow):
         self.setWindowTitle('Image Processing')
         # 从文件中加载UI定义
         self.ui = uic.loadUi("main.ui")
+
         # 加载初始提醒图片
         pix = QPixmap(r'init.jpg')
         self.image = cv2.imread(r'init.jpg')
@@ -47,6 +61,13 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.b_y_sobel.clicked.connect(self.set_y_sobel)
         self.ui.b_set_gaussian.clicked.connect(self.set_gaussian)
         self.ui.b_set_laplacian.clicked.connect(self.set_laplacian)
+
+        # 加载模型
+        self.model = self.model_load()
+        # 检测图片文件路径
+        self.img2predict=""
+        self.ui.b_sharpen.clicked.connect(self.upload_img)
+
 
     def show_cv_image(self, image):
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -236,9 +257,186 @@ class ImageProcessingWindow(QMainWindow):
         self.ui.k8.setText('0.1')
         self.ui.k9.setText('0.1')
 
+    @torch.no_grad()
+    def model_load(self):
+        # yolo = YOLO()
+        out, source, weights, view_img, save_txt, imgsz = \
+            opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+        webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
+
+        # Initialize
+        self.device = torch_utils.select_device(opt.device)
+        if os.path.exists(out):
+            shutil.rmtree(out)  # delete output folder 递归删除
+        os.makedirs(out)  # make new output folder
+        self.half = self.device.type != 'cpu'  # half precision only supported on CUDA
+
+        # Load model
+        model = attempt_load(weights, map_location=self.device)  # load FP32 model
+        imgsz = check_img_size(imgsz, s=model.stride.max())  # check img_size
+        if self.half:
+            model.half()  # to FP16
+
+        # Second-stage classifier
+        self.classify = True
+        if self.classify:
+            self.modelc = LPRNet(lpr_max_len=8, phase=False, class_num=len(CHARS), dropout_rate=0).to(self.device)
+            self.modelc.load_state_dict(
+                torch.load('./weights/Final_LPRNet_model1.pth', map_location=torch.device('cpu')))
+            print("load lprnet pretrained model successful!")
+            self.modelc.to(self.device).eval()  # 加载模型到gpu
+        print("模型加载完成!")
+        return model
+
+    def upload_img(self):
+        # 选择录像文件进行读取
+        fileName, fileType = QFileDialog.getOpenFileName(self, 'Choose file', '', '*.jpg *.png *.tif *.jpeg')
+        if fileName:
+            suffix = fileName.split(".")[-1]
+            save_path = osp.join("images/tmp", "tmp_upload." + suffix)
+            shutil.copy(fileName, save_path)
+            # 应该调整一下图片的大小，然后统一在一起
+            im0 = cv2.imread(save_path)
+            resize_scale = self.output_size / im0.shape[0]
+            im0 = cv2.resize(im0, (0, 0), fx=resize_scale, fy=resize_scale)
+            cv2.imwrite("images/tmp/upload_show_result.jpg", im0)
+            # self.right_img.setPixmap(QPixmap("images/tmp/single_result.jpg"))
+            self.img2predict = fileName
+            self.left_img.setPixmap(QPixmap("images/tmp/upload_show_result.jpg"))
+
+    def detect_img(self):
+
+        out, source, weights, view_img, save_txt, imgsz = \
+            opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+        webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
+        source = self.img2predict
+        print(source)
+        if source == "":
+            QMessageBox.warning(self, "请上传", "请先上传图片再进行检测")
+        else:
+            save_img = True
+            dataset = LoadImages(source, img_size=imgsz)
+
+            # 得到数据集的所有类的类名
+            names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
+            colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
+
+            # Run inference
+            # t0 = time.time()
+            img = torch.zeros((1, 3, imgsz, imgsz), device=self.device)  # init img
+            _ = self.model(img.half() if self.half else img) if self.device.type != 'cpu' else None  # run once
+            for path, img, im0s, vid_cap in dataset:
+                t1 = time_sync
+                # 数组转化张量
+                img = torch.from_numpy(img).to(self.device)
+                img = img.half() if self.half else img.float()  # 半精度训练 uint8 to fp16/32
+                img /= 255.0  # 归一化 0 - 255 to 0.0 - 1.0
+                # 返回维度 如果图片是三维的
+                if img.ndimension() == 3:
+                    # 增加维度 batch_size
+                    img = img.unsqueeze(0)
+
+                # Inference
+                # 对每张图片/视频进行前向推理
+                self.model.model[6].cv3.conv.register_forward_hook(hook_fn)
+                pred = self.model(img, augment=opt.augment)[0]
+                print(pred.shape)
+                # Apply NMS
+                # conf_thres 置信度阈值
+                # iou_thres iou阈值
+                # class 只保留特定类别
+                # agnostic_nms 去除不同类别之间的框
+                pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes,
+                                           agnostic=opt.agnostic_nms)  # 非最大值抑制
+
+                # Apply Classifier
+                if self.classify:
+                    # img: 进行resize + pad之后的图片
+                    # img0s: 原尺寸的图片
+                    pred, plat_num = apply_classifier(pred, self.modelc, img, im0s)
+                # Process detections
+                # 对每张图片进行处理  将pred映射回原图img0
+                # p: 当前图片  的绝对路径
+                # s: 输出信息 初始为 ''
+                # im0: 原始图片
+                for i, det in enumerate(pred):  # detections per image
+                    if webcam:  # batch_size >= 1
+                        p, s, im0 = path[i], '%g: ' % i, im0s[i].copy()
+                    else:
+                        p, s, im0 = path, '', im0s
+
+                    # save_path = str(Path(out) / Path(p).name)
+                    # txt文件(保存预测框坐标)保存路径
+                    txt_path = str(Path(out) / Path(p).stem) + (
+                        '_%g' % dataset.frame if dataset.mode == 'video' else '')
+                    s += '%gx%g ' % img.shape[2:]  # print string 图片shap（w，h）
+                    gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain [whwh] 用于归一化
+                    if det is not None and len(det):
+                        # Rescale boxes from img_size to im0 size
+                        # 将预测信息映射回原图
+                        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+
+                        # Write results
+
+                        for de, lic_plat in zip(det, plat_num):
+                            # xyxy,conf,cls,lic_plat=de[:4],de[4],de[5],de[6:]
+                            *xyxy, conf, cls = de
+
+                            if save_txt:  # Write to file
+                                # 将xyxy(左上角 + 右下角)格式转换为xywh(中心的 + 宽高)格式 并除以gn(whwh)做归一化
+                                xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
+                                with open(txt_path + '.txt', 'a') as f:
+                                    f.write(('%g ' * 5 + '\n') % (cls, xywh))  # label format
+
+                            if save_img or view_img:  # Add bbox to image
+                                # label = '%s %.2f' % (names[int(cls)], conf)
+                                lb = ""
+                                for a, i in enumerate(lic_plat):
+                                    # if a ==0:
+                                    #     continue
+                                    lb += CHARS[int(i)]
+                                label = '%s %.2f' % (lb, conf)
+                                # im0=plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                                im0 = plot_one_box(xyxy, im0, label=label, color=(0, 0, 0),
+                                                   line_thickness=3)  # 车牌标签颜色
+                                # print(type(im0))
+                                self.list = []
+                                self.list.append(lb)
+
+                            # print(list)
+                            for index in self.list:
+                                print('当前车牌号：%s' % index)
+                                llb = QLineEdit(index)
+                                llb.setMinimumHeight(47)
+                                self.img_detection_slayout.addWidget(llb, alignment=Qt.AlignCenter)
+                            self.scrollAreaWidgetContents.setLayout(self.img_detection_slayout)
+                            self.img_detection_scroll.setWidget(self.scrollAreaWidgetContents)
+
+                    # Save results (image with detections)
+                    if save_img:
+                        im0 = np.array(im0)  # 图片转化为 narray
+                        cv2.imwrite("images/tmp/single_result.jpg", im0)  # 这个地方的im0必须为narray
+                        self.right_img.setPixmap(QPixmap("images/tmp/single_result.jpg"))
+                        # print(lb)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', nargs='+', type=str, default='./weights/last.pt', help='model.pt path(s)')
+    parser.add_argument('--source', type=str, default='./inference/images/', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--output', type=str, default='inference/output', help='output folder')  # output folder
+    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--view-img', action='store_true', help='display results')
+    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--classes', nargs='+', type=int, help='filter by class')
+    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
+    parser.add_argument('--augment', action='store_true', help='augmented inference')
+    parser.add_argument('--update', action='store_true', help='update all models')
+    opt = parser.parse_args()
 
     main_window = ImageProcessingWindow()
     main_window.ui.show()
