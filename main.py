@@ -18,7 +18,7 @@ from models.LPRNet import *
 from utils.torch_utils import time_sync
 from qt_material import apply_stylesheet
 import os
-
+from weights.obtain_feature_map import hook_fn
 
 
 class ImageProcessingWindow(QMainWindow):
@@ -27,6 +27,7 @@ class ImageProcessingWindow(QMainWindow):
         self.setWindowTitle('Image Processing')
         # 从文件中加载UI定义
         self.ui = uic.loadUi("main.ui")
+        self.output_size = 480
 
         # 加载初始提醒图片
         pix = QPixmap(r'init.jpg')
@@ -67,6 +68,9 @@ class ImageProcessingWindow(QMainWindow):
         # 检测图片文件路径
         self.img2predict=""
         self.ui.b_sharpen.clicked.connect(self.upload_img)
+        # 打开需要检测的图片
+        self.ui.b_choose_pic.clicked.connect(self.upload_img)
+        self.ui.b_detect.clicked.connect(self.detect_img)
 
 
     def show_cv_image(self, image):
@@ -290,19 +294,26 @@ class ImageProcessingWindow(QMainWindow):
 
     def upload_img(self):
         # 选择录像文件进行读取
+        file_dialog = QFileDialog()
         fileName, fileType = QFileDialog.getOpenFileName(self, 'Choose file', '', '*.jpg *.png *.tif *.jpeg')
+        pix = QPixmap(fileName)
+        self.ui.ori_pic.setPixmap(pix.scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
         if fileName:
             suffix = fileName.split(".")[-1]
+            # save_path = "images/tmp/"+"tmp_upload." + suffix
             save_path = osp.join("images/tmp", "tmp_upload." + suffix)
             shutil.copy(fileName, save_path)
+            print(save_path)
             # 应该调整一下图片的大小，然后统一在一起
             im0 = cv2.imread(save_path)
+            # cv2.imshow("Result", im0)
             resize_scale = self.output_size / im0.shape[0]
             im0 = cv2.resize(im0, (0, 0), fx=resize_scale, fy=resize_scale)
+
             cv2.imwrite("images/tmp/upload_show_result.jpg", im0)
             # self.right_img.setPixmap(QPixmap("images/tmp/single_result.jpg"))
             self.img2predict = fileName
-            self.left_img.setPixmap(QPixmap("images/tmp/upload_show_result.jpg"))
+            # self.left_img.setPixmap(QPixmap("images/tmp/upload_show_result.jpg"))
 
     def detect_img(self):
 
@@ -310,7 +321,7 @@ class ImageProcessingWindow(QMainWindow):
             opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
         webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
         source = self.img2predict
-        print(source)
+
         if source == "":
             QMessageBox.warning(self, "请上传", "请先上传图片再进行检测")
         else:
@@ -338,7 +349,10 @@ class ImageProcessingWindow(QMainWindow):
 
                 # Inference
                 # 对每张图片/视频进行前向推理
-                self.model.model[6].cv3.conv.register_forward_hook(hook_fn)
+                self.model.model[6].cv3.conv.register_forward_hook(hook_fn('m[6]'))
+                # self.model.model[7].conv.register_forward_hook(hook_fn('m[7]'))
+                # self.model.model[9].cv2.conv.register_forward_hook(hook_fn('m[9]'))
+                # self.model.model[23].cv3.conv.register_forward_hook(hook_fn('m[23]'))
                 pred = self.model(img, augment=opt.augment)[0]
                 print(pred.shape)
                 # Apply NMS
@@ -403,20 +417,23 @@ class ImageProcessingWindow(QMainWindow):
                                 self.list = []
                                 self.list.append(lb)
 
-                            # print(list)
                             for index in self.list:
                                 print('当前车牌号：%s' % index)
-                                llb = QLineEdit(index)
-                                llb.setMinimumHeight(47)
-                                self.img_detection_slayout.addWidget(llb, alignment=Qt.AlignCenter)
-                            self.scrollAreaWidgetContents.setLayout(self.img_detection_slayout)
-                            self.img_detection_scroll.setWidget(self.scrollAreaWidgetContents)
+                                self.ui.license_plate.setText(index)
+                                # llb = QLineEdit(index)
+                                # llb.setMinimumHeight(47)
+                                # self.img_detection_slayout.addWidget(llb, alignment=Qt.AlignCenter)
+                            # self.scrollAreaWidgetContents.setLayout(self.img_detection_slayout)
+                            # self.img_detection_scroll.setWidget(self.scrollAreaWidgetContents)
 
                     # Save results (image with detections)
                     if save_img:
                         im0 = np.array(im0)  # 图片转化为 narray
                         cv2.imwrite("images/tmp/single_result.jpg", im0)  # 这个地方的im0必须为narray
-                        self.right_img.setPixmap(QPixmap("images/tmp/single_result.jpg"))
+                        pix = QPixmap("images/tmp/single_result.jpg")
+                        self.ui.res_pic.setPixmap(pix.scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
+                        # self.right_img.setPixmap(QPixmap("images/tmp/single_result.jpg"))
+
                         # print(lb)
 
 
