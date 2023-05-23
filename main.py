@@ -349,11 +349,15 @@ class ImageProcessingWindow(QMainWindow):
 
                 # Inference
                 # 对每张图片/视频进行前向推理
-                self.model.model[6].cv3.conv.register_forward_hook(hook_fn('m[6]'))
-                # self.model.model[7].conv.register_forward_hook(hook_fn('m[7]'))
-                # self.model.model[9].cv2.conv.register_forward_hook(hook_fn('m[9]'))
-                # self.model.model[23].cv3.conv.register_forward_hook(hook_fn('m[23]'))
+                self.model.model[0].conv.register_forward_hook(hook_fn('m[0]'))
+                self.model.model[1].conv.register_forward_hook(hook_fn('m[1]'))
+                self.model.model[2].cv1.conv.register_forward_hook(hook_fn('m[2]'))
+                self.model.model[5].conv.register_forward_hook(hook_fn('m[5]'))
                 pred = self.model(img, augment=opt.augment)[0]
+                self.model.model[0].conv.register_forward_hook(hook_fn('m[0]')).remove()
+                self.model.model[1].conv.register_forward_hook(hook_fn('m[1]')).remove()
+                self.model.model[2].cv1.conv.register_forward_hook(hook_fn('m[2]')).remove()
+                self.model.model[5].conv.register_forward_hook(hook_fn('m[5]')).remove()
                 print(pred.shape)
                 # Apply NMS
                 # conf_thres 置信度阈值
@@ -430,6 +434,13 @@ class ImageProcessingWindow(QMainWindow):
                     if save_img:
                         im0 = np.array(im0)  # 图片转化为 narray
                         cv2.imwrite("images/tmp/single_result.jpg", im0)  # 这个地方的im0必须为narray
+                        self.ui.mid_img_1.setPixmap(QPixmap("m[0].png").scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
+                        self.ui.mid_img_2.setPixmap(
+                            QPixmap("m[1].png").scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
+                        self.ui.mid_img_3.setPixmap(
+                            QPixmap("m[2].png").scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
+                        self.ui.mid_img_4.setPixmap(
+                            QPixmap("m[5].png").scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
                         pix = QPixmap("images/tmp/single_result.jpg")
                         self.ui.res_pic.setPixmap(pix.scaled(self.ui.image_label.size(), Qt.KeepAspectRatio))
                         # self.right_img.setPixmap(QPixmap("images/tmp/single_result.jpg"))

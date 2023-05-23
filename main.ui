@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1204</width>
-    <height>662</height>
+    <height>1098</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -714,19 +714,68 @@
              <property name="title">
               <string>中间特征图</string>
              </property>
-             <widget class="QLabel" name="label_2">
-              <property name="geometry">
-               <rect>
-                <x>260</x>
-                <y>150</y>
-                <width>54</width>
-                <height>12</height>
-               </rect>
-              </property>
-              <property name="text">
-               <string>此处显示中间特征图</string>
-              </property>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_22">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_16">
+                <item>
+                 <widget class="QLabel" name="mid_img_1">
+                  <property name="minimumSize">
+                   <size>
+                    <width>400</width>
+                    <height>300</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>中间特征图1</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="mid_img_3">
+                  <property name="minimumSize">
+                   <size>
+                    <width>400</width>
+                    <height>300</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>中间特征图3</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_17">
+                <item>
+                 <widget class="QLabel" name="mid_img_2">
+                  <property name="minimumSize">
+                   <size>
+                    <width>400</width>
+                    <height>300</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>中间特征图2</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="mid_img_4">
+                  <property name="minimumSize">
+                   <size>
+                    <width>400</width>
+                    <height>300</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>中间特征图4</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
