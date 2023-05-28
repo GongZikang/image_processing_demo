@@ -17,6 +17,9 @@
 
 ![timeline](./preview%20image/timeline.jpg)
 ![timeline](./preview%20image/timeline2.jpg)
+![timeline](./preview%20image/timeline3.jpg)
+![timeline](./preview%20image/timeline4.jpg)
+完整地址：https://zenith-cornet-50d.notion.site/c2aca73013d14245867edb84b6f35b42?v=cbed6d3c59084b5f9438a0cf6ad8a062
 
 
 ## 软件需求说明书
