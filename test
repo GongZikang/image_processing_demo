@@ -1,0 +1,1633 @@
+import unittest
+import filecmp
+from XTestRunner import HTMLTestRunner
+
+from run import ImageProcessingWindow
+import argparse
+import cv2
+import numpy as np
+from PIL import Image
+import torch.backends.cudnn as cudnn
+
+from models.experimental import *
+from utils.datasets import *
+from utils.utils import *
+from models.LPRNet import *
+import sys
+import numpy as np
+from PyQt5 import uic
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QInputDialog, QMessageBox
+from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5 import QtWidgets
+from PyQt5 import QtCore
+from PyQt5 import QtTest
+from PyQt5.QtTest import QTest
+
+import argparse
+import threading
+import os.path as osp
+import torch.backends.cudnn as cudnn
+from models.experimental import *
+from utils.datasets import *
+from utils.utils import *
+from models.LPRNet import *
+from utils.torch_utils import time_sync
+from qt_material import apply_stylesheet
+import os
+import cv2
+import ropt
+from weights.obtain_feature_map import hook_fn
+from unittest.mock import patch, MagicMock
+import XTestRunner
+
+# 继承 QThread 类
+class BackWorkThread(QThread):
+   # 声明一个信号，同时返回一个str
+   finishSignal = pyqtSignal(str)
+   # 构造函数里增加形参
+   def __init__(self, sleepTime,parent=None):
+      super(BackWorkThread, self).__init__(parent)
+      # 储存参数
+      self.sleepTime = sleepTime
+
+   #重写run()函数，在里面定时执行业务。
+   def run(self):
+      # 休眠一段时间
+      time.sleep(self.sleepTime)
+      # 休眠结束，发送一个信号告诉主线程窗口
+      self.finishSignal.emit('ok , begin to close Window')
+
+#新建测试类
+class Test_Showcv(unittest.TestCase):
+    '''
+    测试系统是否能正确选取文件并进行展示
+    '''
+    def setUp(self) -> None:
+        print('start')
+        self.app = QtWidgets.QApplication(sys.argv)
+        self.form = ImageProcessingWindow()
+        self.form.show()
+
+        self.bkThread = BackWorkThread(int(5))
+        self.bkThread.finishSignal.connect(self.app.exec_)
+
+        self.button1 = self.form.ui.b_open_image
+        self.button2 = self.form.ui.b_save_image
+        self.button3 = self.form.ui.b_vertical_flip
+        self.button4 = self.form.ui.b_horizontal_flip
+        self.button5 = self.form.ui.b_rotate_image
+
+        self.label = self.form.ui.image_label
+
+        self.bkThread.start()
+
+    def tearDown(self) -> None:
+        print('teardown')
+        del self.app
+        del self.form
+        del self.button1
+        del self.label
+        del self.button2
+        del self.button3
+        del self.button4
+        del self.button5
+
+
+    def test_default(self):
+        '''
+        测试默认状态下程序的情况
+        '''
+        print('test_default begin')
+        self.form.setWindowTitle('开始测试用例 test_defaul')
+        #初始图片测试
+        image = cv2.imread(r'init.jpg')
+        np.testing.assert_allclose(image, self.form.image)
+
+        #初始卷积核测试
+        self.assertEqual(self.form.ui.k1.text(), '0', msg='测试不通过')
+        self.assertEqual(self.form.ui.k2.text(), '0', msg='测试不通过')
+        self.assertEqual(self.form.ui.k3.text(), '0', msg='测试不通过')
+        self.assertEqual(self.form.ui.k4.text(), '0', msg='测试不通过')
+        self.assertEqual(self.form.ui.k5.text(), '1', msg='测试不通过')
+        self.assertEqual(self.form.ui.k6.text(), '0', msg='测试不通过')
+        self.assertEqual(self.form.ui.k7.text(), '0', msg='测试不通过')
+        self.assertEqual(self.form.ui.k8.text(), '0', msg='测试不通过')
+        self.assertEqual(self.form.ui.k9.text(), '0', msg='测试不通过')
+
+        print('test end')
+
+
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_open_image_01(self, mock_getOpenFileName):
+        '''
+        测试open——image是否能正确打开图像文件并展示在窗口中，JPG文件
+        '''
+        print('test open_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_open_image_01')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/1.jpg', '')
+
+
+        # #模拟路径
+        # file_dialog = QFileDialog()
+        # file_dialog.getOpenFileName = lambda *args: (r'E:/imageprocessing/processing/car/1.jpg', '')
+        #模拟鼠标点击
+        self.button1.click()
+
+        map1 = self.label.pixmap().toImage()
+        data1 = map1.bits().asstring(map1.byteCount())
+
+        #预期的pixmap
+        expected_image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+        self.form.show_cv_image(expected_image)
+        map2 = self.label.pixmap().toImage()
+        data2 = map2.bits().asstring(map2.byteCount())
+        #判断接口操作的pixmap与预期的pixmap是否相等
+        self.assertTrue(np.array_equal(np.frombuffer(data1, dtype=np.uint8),
+                                       np.frombuffer(data2, dtype=np.uint8)))
+
+
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_open_image_02(self, mock_getOpenFileName):
+        '''
+        测试open——image是否能正确打开图像文件并展示在窗口中，png文件
+        '''
+        print('test open_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_open_image_02')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/2.png', '')
+
+        # #模拟路径
+        # file_dialog = QFileDialog()
+        # file_dialog.getOpenFileName = lambda *args: (r'E:/imageprocessing/processing/car/1.jpg', '')
+        #模拟鼠标点击
+        self.button1.click()
+
+        map1 = self.label.pixmap().toImage()
+        data1 = map1.bits().asstring(map1.byteCount())
+
+        #预期的pixmap
+        expected_image = cv2.imread(r'E:/imageprocessing/processing/car/2.png')
+        self.form.show_cv_image(expected_image)
+        map2 = self.label.pixmap().toImage()
+        data2 = map2.bits().asstring(map2.byteCount())
+        #判断接口操作的pixmap与预期的pixmap是否相等
+        self.assertTrue(np.array_equal(np.frombuffer(data1, dtype=np.uint8),
+                                       np.frombuffer(data2, dtype=np.uint8)))
+
+
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_open_image_03(self, mock_getOpenFileName):
+        '''
+        测试open——image是否能正确打开图像文件并展示在窗口中，jpeg文件
+        '''
+        print('test open_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_open_image_03')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/4.jpeg', '')
+
+
+        #模拟鼠标点击
+        self.button1.click()
+
+        map1 = self.label.pixmap().toImage()
+        data1 = map1.bits().asstring(map1.byteCount())
+
+        #预期的pixmap
+        expected_image = cv2.imread(r'E:/imageprocessing/processing/car/4.jpeg')
+        self.form.show_cv_image(expected_image)
+        map2 = self.label.pixmap().toImage()
+        data2 = map2.bits().asstring(map2.byteCount())
+        #判断接口操作的pixmap与预期的pixmap是否相等
+        self.assertTrue(np.array_equal(np.frombuffer(data1, dtype=np.uint8),
+                                       np.frombuffer(data2, dtype=np.uint8)))
+
+
+    def test_open_image_04(self):
+        '''
+        测试open——image是否能正确打开图像文件并展示在窗口中，中文路径
+        '''
+        print('test open_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_open_image_04')
+
+        expected_image = cv2.imread(r'E:/测试案例/1.jpg')
+        self.assertIsNotNone(expected_image)
+
+
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_open_image_05(self, mock_getOpenFileName):
+        '''
+        测试open——image是否能正确打开图像文件并展示在窗口中，webp文件
+        '''
+        print('test open_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_open_image_05')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/11.webp', '')
+
+        #模拟鼠标点击
+        self.button1.click()
+
+        map1 = self.label.pixmap().toImage()
+        data1 = map1.bits().asstring(map1.byteCount())
+
+        self.assertFalse(self.label.pixmap().isNull())
+
+        #预期的pixmap
+        expected_image = cv2.imread(r'E:/imageprocessing/processing/car/11.webp')
+        self.assertIsNotNone(expected_image)
+        self.form.show_cv_image(expected_image)
+        map2 = self.label.pixmap().toImage()
+        data2 = map2.bits().asstring(map2.byteCount())
+        #判断接口操作的pixmap与预期的pixmap是否相等
+        self.assertTrue(np.array_equal(np.frombuffer(data1, dtype=np.uint8),
+                                       np.frombuffer(data2, dtype=np.uint8)))
+
+
+    @patch('run.QMessageBox.warning')
+    def test_open_image_06(self, mock_warning):
+        '''
+        测试系统能否打开其他文件，如果不能打开其他文件，是否会有提示
+        '''
+        print('test open_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_open_image_06')
+
+        file_path = r'E:/imageprocessing/processing/car/test.txt'
+
+        mock_warning.return_value = QMessageBox.Ok
+
+        with self.assertRaises(AssertionError):
+            if file_path:
+                if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                    image = cv2.imread(file_path)
+                    self.form.image = image
+                    self.form.show_cv_image(image)
+                else:
+                    QMessageBox.warning(None, 'Invalid File', 'Please select an image file.')
+
+
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_open_image_07(self, mock_getOpenFileName):
+        '''
+        测试open——image是否能正确打开较大的图像
+        '''
+        print('test open_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_open_image_07')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/5.jpg', '')
+
+
+        #模拟鼠标点击
+        self.button1.click()
+
+        map1 = self.label.pixmap().toImage()
+        data1 = map1.bits().asstring(map1.byteCount())
+
+        #预期的pixmap
+        expected_image = cv2.imread(r'E:/imageprocessing/processing/car/5.jpg')
+        self.form.show_cv_image(expected_image)
+        map2 = self.label.pixmap().toImage()
+        data2 = map2.bits().asstring(map2.byteCount())
+        #判断接口操作的pixmap与预期的pixmap是否相等
+        self.assertTrue(np.array_equal(np.frombuffer(data1, dtype=np.uint8),
+                                       np.frombuffer(data2, dtype=np.uint8)))
+
+
+    @patch('run.QFileDialog.getSaveFileName')
+    def test_save_image_01(self, mock_getSaveFileName):
+        '''
+        测试能否存储图像为jpg格式
+        '''
+        print('test save_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_save_image_01')
+
+        #模拟已经加载的图像
+        self.form.image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+        #模拟存储路径
+        mock_getSaveFileName.return_value = (r'E:/imageprocessing/processing/images/1.jpg', '')
+        #模拟鼠标点击
+        self.button2.click()
+
+        saved_image = cv2.imread(r'E:/imageprocessing/processing/images/1.jpg')
+        self.assertIsNotNone(saved_image)
+
+
+    @patch('run.QFileDialog.getSaveFileName')
+    def test_save_image_02(self, mock_getSaveFileName):
+        '''
+        测试能否存储图像为png格式
+        '''
+        print('test save_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_save_image_01')
+
+        #模拟已经加载的图像
+        self.form.image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+        #模拟存储路径
+        mock_getSaveFileName.return_value = (r'E:/imageprocessing/processing/images/2.png', '')
+        #模拟鼠标点击
+        self.button2.click()
+
+        saved_image = cv2.imread(r'E:/imageprocessing/processing/images/2.png')
+        self.assertIsNotNone(saved_image)
+
+
+    @patch('run.QFileDialog.getSaveFileName')
+    def test_save_image_03(self, mock_getSaveFileName):
+        '''
+        测试能否存储图像为jpeg格式
+        '''
+        print('test save_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_save_image_01')
+
+        #模拟已经加载的图像
+        self.form.image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+        #模拟存储路径
+        mock_getSaveFileName.return_value = (r'E:/imageprocessing/processing/images/3.jpeg', '')
+        #模拟鼠标点击
+        self.button2.click()
+
+        saved_image = cv2.imread(r'E:/imageprocessing/processing/images/3.jpeg')
+        self.assertIsNotNone(saved_image)
+
+
+    @patch('run.QFileDialog.getSaveFileName')
+    def test_save_image_04(self, mock_getSaveFileName):
+        '''
+        测试能否将图像存储在中文路径下
+        '''
+        print('test save_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_save_image_01')
+
+        #模拟已经加载的图像
+        self.form.image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+        #模拟存储路径
+        mock_getSaveFileName.return_value = (r'E:/测试案例/1.jpg', '')
+        #模拟鼠标点击
+        self.button2.click()
+
+        saved_image = cv2.imread(r'E:/测试案例/1.jpg')
+        self.assertIsNotNone(saved_image)
+
+
+    @patch('run.QFileDialog.getSaveFileName')
+    @patch('run.QMessageBox')
+    def test_save_image_05(self, mock_getSaveFileName, mock_QMessageBox):
+        '''
+        测试能否将图像存储为非图像文件的格式，如果可以，是否给出提醒
+        '''
+        print('test save_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_save_image_01')
+
+        #模拟已经加载的图像
+        self.form.image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+        cv2.imwrite = MagicMock(return_value=False)
+        #模拟存储路径
+        mock_getSaveFileName.return_value = (r'E:/imageprocessing/processing/images/4.txt', '')
+        #模拟鼠标点击
+        self.button2.click()
+        #若要判断文件是否存在，加入下面一句
+        # self.assertTrue(os.path.exists(r'E:/imageprocessing/processing/images/4.txt'))
+
+        mock_QMessageBox.warning.assert_called_once_with(self.form, 'Invalid Format',
+                                                         'Please select a valid image format.')
+
+
+    def test_vertical_flip_01(self):
+        '''
+        检验能否将图片垂直翻转，557*373
+        '''
+        print('test vertical flip begin')
+
+        self.form.setWindowTitle('开始测试用例 test vertical flip 01')
+        #模拟加载图像
+        image = cv2.imread(r'E:/imageprocessing/processing/car/10.jpeg')
+        self.form.image = image
+
+        self.button3.click()
+
+        flipped_map = cv2.flip(image, 0)
+        self.assertTrue((self.form.image == flipped_map).all())
+
+
+    def test_vertical_flip_02(self):
+        '''
+        检验能否将图片垂直翻转，1600*1200
+        '''
+        print('test vertical flip begin')
+
+        self.form.setWindowTitle('开始测试用例 test vertical flip 02')
+        #模拟加载图像
+        image = cv2.imread(r'E:/imageprocessing/processing/car/5.jpg')
+        self.form.image = image
+
+        self.button3.click()
+
+        flipped_map = cv2.flip(image, 0)
+        self.assertTrue((self.form.image == flipped_map).all())
+
+
+    def test_vertical_flip_03(self):
+        '''
+        检验能否将图片垂直翻转640*480
+        '''
+        print('test vertical flip begin')
+
+        self.form.setWindowTitle('开始测试用例 test vertical flip 03')
+        #模拟加载图像
+        image = cv2.imread(r'E:/imageprocessing/processing/car/4.jpeg')
+        self.form.image = image
+
+        self.button3.click()
+
+        flipped_map = cv2.flip(image, 0)
+        self.assertTrue((self.form.image == flipped_map).all())
+
+
+    def test_horizontal_flip_01(self):
+        '''
+        检验能否将图片水平翻转，557*373
+        '''
+
+        print('test horizontal_flip begin')
+
+        self.form.setWindowTitle('开始测试用例 test horizontal_flip 01')
+
+        # 模拟加载图像
+        image = cv2.imread(r'E:/imageprocessing/processing/car/10.jpeg')
+        self.form.image = image
+
+        self.button4.click()
+
+        fliped_map = cv2.flip(image, 1)
+        self.assertTrue((self.form.image == fliped_map).all())
+
+
+    def test_horizontal_flip_02(self):
+        '''
+        检验能否将图片水平翻转，1600*1200
+        '''
+
+        print('test horizontal_flip begin')
+
+        self.form.setWindowTitle('开始测试用例 test horizontal_flip 02')
+
+        # 模拟加载图像
+        image = cv2.imread(r'E:/imageprocessing/processing/car/5.jpg')
+        self.form.image = image
+
+        self.button4.click()
+
+        fliped_map = cv2.flip(image, 1)
+        self.assertTrue((self.form.image == fliped_map).all())
+
+
+    def test_horizontal_flip_03(self):
+        '''
+        检验能否将图片水平翻转,640*480
+        '''
+
+        print('test horizontal_flip begin')
+
+        self.form.setWindowTitle('开始测试用例 test horizontal_flip 03')
+
+        # 模拟加载图像
+        image = cv2.imread(r'E:/imageprocessing/processing/car/4.jpeg')
+        self.form.image = image
+
+        self.button4.click()
+
+        fliped_map = cv2.flip(image, 1)
+        self.assertTrue((self.form.image == fliped_map).all())
+
+
+    @patch('run.QInputDialog.getInt')
+    def test_rotate_image_01(self, mock_getInt):
+        '''
+        旋转正角度
+        '''
+
+        print('test rotate_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test rotate_image 01')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        #模拟输入角度
+        angle = 90
+        ok = True
+        mock_getInt.return_value = (angle, ok)
+
+        #进行旋转操作
+        self.button5.click()
+
+        #验证是否成功旋转
+        rows, cols, _ = image.shape
+        rotation_matrix = cv2.getRotationMatrix2D((cols / 2, rows / 2), -angle, 1)
+        rotated_image = cv2.warpAffine(image, rotation_matrix, (cols, rows))
+        self.assertTrue((self.form.image == rotated_image).all())
+
+
+    @patch('run.QInputDialog.getInt')
+    def test_rotate_image_02(self, mock_getInt):
+        '''
+        旋转负角度
+        '''
+
+        print('test rotate_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test rotate_image 02')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        #模拟输入角度
+        angle = -90
+        ok = True
+        mock_getInt.return_value = (angle, ok)
+
+        #进行旋转操作
+        self.button5.click()
+
+        #验证是否成功旋转
+        rows, cols, _ = image.shape
+        rotation_matrix = cv2.getRotationMatrix2D((cols / 2, rows / 2), -angle, 1)
+        rotated_image = cv2.warpAffine(image, rotation_matrix, (cols, rows))
+        self.assertTrue((self.form.image == rotated_image).all())
+
+
+    @patch('run.QInputDialog.getInt')
+    def test_rotate_image_03(self, mock_getInt):
+        '''
+        旋转小数
+        '''
+
+        print('test rotate_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test rotate_image 03')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        #模拟输入角度
+        angle = 90.8
+        ok = True
+        mock_getInt.return_value = (angle, ok)
+
+        #进行旋转操作
+        self.button5.click()
+
+        #验证是否成功旋转
+        rows, cols, _ = image.shape
+        rotation_matrix = cv2.getRotationMatrix2D((cols / 2, rows / 2), -90.8, 1)
+        rotated_image = cv2.warpAffine(image, rotation_matrix, (cols, rows))
+        self.assertFalse(self.form.image == rotated_image).all()
+
+
+    @patch('run.cv2.selectROI')
+    def test_crop_image_01(self, mock_selectROI):
+        '''
+        检验是否可以正确裁剪图像
+        '''
+
+        print('test crop_image begin')
+
+        self.form.setWindowTitle('测试案例 crop_image_test_01')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        roi = (100, 100, 200, 200)
+        mock_selectROI.return_value = roi
+
+        self.form.crop_image()
+
+        cropped_image = image[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]]
+        self.assertTrue((self.form.image == cropped_image).all())
+
+
+    @patch('run.cv2.selectROI')
+    def test_crop_image_02(self, mock_selectROI):
+        '''
+        检验是否可以正确裁剪图像
+        '''
+
+        print('test crop_image begin')
+
+        self.form.setWindowTitle('测试案例 crop_image_test_02')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        roi = (10, 20, 30, 40)
+        mock_selectROI.return_value = roi
+
+        self.form.crop_image()
+
+        cropped_image = image[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]]
+        self.assertTrue((self.form.image == cropped_image).all())
+
+
+    @patch('run.cv2.selectROI')
+    def test_crop_image_03(self, mock_selectROI):
+        '''
+        检验是否可以正确裁剪图像
+        '''
+
+        print('test crop_image begin')
+
+        self.form.setWindowTitle('测试案例 crop_image_test_03')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        roi = (10, 10, 20, 20)
+        mock_selectROI.return_value = roi
+
+        self.form.crop_image()
+
+        cropped_image = image[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]]
+        self.assertTrue((self.form.image == cropped_image).all())
+
+
+    def test_convert_to_gray_01(self):
+        '''
+        测试是否能将图片转为灰度图像
+        '''
+        print('test test_convert_to_gray begin')
+
+        self.form.setWindowTitle('测试案例test_convert_to_gray_01')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        self.form.convert_to_gray()
+        #检查是否更新为灰度图像，通道数为1
+        self.assertTrue(len(self.form.image.shape) == 2)
+
+        pixel_min = np.min(self.form.image)
+        pixel_max = np.max(self.form.image)
+        #检查像素范围
+        self.assertTrue(pixel_min >= 0 and pixel_max <= 255)
+
+
+    @patch('run.QInputDialog.getInt')
+    @patch('run.QMessageBox.warning')
+    def test_apply_gaussian_blur_01(self, mock_warning, mock_getInt):
+        '''
+        检查在输入正确的卷积核时能否正确运用高斯模糊增加图片的模糊程度
+        '''
+
+        print('test apply_gaussian_blur begin')
+
+        self.form.setWindowTitle('测试案例test_apply_gaussian_blur_01')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+        #模拟输入核大小
+        ksize = 3
+
+        mock_getInt.return_value = (ksize, True)
+
+        self.form.apply_gaussian_blur()
+
+        #验证模糊程度是否增加
+        blurred_image = self.form.image
+        self.assertGreater(cv2.Laplacian(blurred_image, cv2.CV_64F).var(), cv2.Laplacian(image, cv2.CV_64F).var())
+
+        #检查是否弹出对话框
+        mock_warning.assert_not_called()
+
+
+    @patch('run.QInputDialog.getInt')
+    @patch('run.QMessageBox.warning')
+    def test_apply_gaussian_blur_02(self, mock_warning, mock_getInt):
+        '''
+        检查在卷积核大小为浮点数时会不会弹出警告对话框
+        '''
+
+        print('test apply_gaussian_blur begin')
+
+        self.form.setWindowTitle('测试案例test_apply_gaussian_blur_02')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+        #模拟输入核大小
+        ksize = 0.1
+
+        mock_getInt.return_value = (ksize, True)
+
+        self.form.apply_gaussian_blur()
+
+        #验证模糊程度是否增加
+        # blurred_image = self.form.image
+        # self.assertGreater(cv2.Laplacian(blurred_image, cv2.CV_64F).var(), cv2.Laplacian(image, cv2.CV_64F).var())
+
+        #检查是否弹出对话框
+        mock_warning.assert_not_called()
+        mock_warning.assert_called_once_with(self.form, "警告", "请输入正奇数！如1、3、5等", QMessageBox.Cancel)
+
+
+    @patch('run.QInputDialog.getInt')
+    @patch('run.QMessageBox.warning')
+    def test_apply_gaussian_blur_03(self, mock_warning, mock_getInt):
+        '''
+        检查在卷积核大小为4时会不会弹出警告对话框
+        '''
+
+        print('test apply_gaussian_blur begin')
+
+        self.form.setWindowTitle('测试案例test_apply_gaussian_blur_03')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+        #模拟输入核大小
+        ksize = 4
+
+        mock_getInt.return_value = (ksize, True)
+
+        self.form.apply_gaussian_blur()
+
+        #验证模糊程度是否增加
+        # blurred_image = self.form.image
+        # self.assertGreater(cv2.Laplacian(blurred_image, cv2.CV_64F).var(), cv2.Laplacian(image, cv2.CV_64F).var())
+
+        #检查是否弹出对话框
+        mock_warning.assert_not_called()
+        mock_warning.assert_called_once_with(self.form, "警告", "请输入正奇数！如1、3、5等", QMessageBox.Cancel)
+
+
+    def test_sharpen_01(self):
+        '''
+        检查图像是否被正确锐化
+        '''
+
+        print('test sharpen begin')
+
+        self.form.setWindowTitle('测试案例 test sharpen 01')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        self.form.sharpen()
+
+        #检查图像是否被正确处理
+        self.assertIsNotNone(self.form.image)
+
+        #进一步检查图像是否被锐化
+        sharpened_image = cv2.filter2D(image, cv2.CV_32F, np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], dtype=np.float32))
+        sharpened_image = cv2.convertScaleAbs(sharpened_image)
+        self.assertTrue((self.form.image == sharpened_image).all())
+
+
+    def test_sharpen_02(self):
+        '''
+        检查图像是否被正确锐化，图片大小1600*1200
+        '''
+
+        print('test sharpen begin')
+
+        self.form.setWindowTitle('测试案例 test sharpen 02')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/5.jpg')
+
+        self.form.image = image
+
+        self.form.sharpen()
+
+        #检查图像是否被正确处理
+        self.assertIsNotNone(self.form.image)
+
+        #进一步检查图像是否被锐化
+        sharpened_image = cv2.filter2D(image, cv2.CV_32F, np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], dtype=np.float32))
+        sharpened_image = cv2.convertScaleAbs(sharpened_image)
+        self.assertTrue((self.form.image == sharpened_image).all())
+
+
+    def test_sharpen_03(self):
+        '''
+        检查图像是否被正确锐化,图片大小557*373
+        '''
+
+        print('test sharpen begin')
+
+        self.form.setWindowTitle('测试案例 test sharpen 03')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/10.jpeg')
+
+        self.form.image = image
+
+        self.form.sharpen()
+
+        #检查图像是否被正确处理
+        self.assertIsNotNone(self.form.image)
+
+        #进一步检查图像是否被锐化
+        sharpened_image = cv2.filter2D(image, cv2.CV_32F, np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], dtype=np.float32))
+        sharpened_image = cv2.convertScaleAbs(sharpened_image)
+        self.assertTrue((self.form.image == sharpened_image).all())
+
+
+    def test_apply_histogram_equalization_01(self):
+        '''
+        检查直方图均值化是否可以正常执行
+        '''
+
+        print('test apply histogram equalization begin')
+
+        self.form.setWindowTitle('测试案例 apply histogram equalization 01')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        self.form.apply_histogram_equalization()
+
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        equalized_image = cv2.equalizeHist(gray_image)
+        colored_equalized_image = cv2.cvtColor(equalized_image, cv2.COLOR_GRAY2BGR)
+        self.assertTrue(np.array_equal(self.form.image, colored_equalized_image))
+
+
+    def test_apply_histogram_equalization_02(self):
+        '''
+        检查直方图均值化是否可以正常执行,图片大小1600*1200
+        '''
+
+        print('test apply histogram equalization begin')
+
+        self.form.setWindowTitle('测试案例 apply histogram equalization 02')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/5.jpg')
+
+        self.form.image = image
+
+        self.form.apply_histogram_equalization()
+
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        equalized_image = cv2.equalizeHist(gray_image)
+        colored_equalized_image = cv2.cvtColor(equalized_image, cv2.COLOR_GRAY2BGR)
+        self.assertTrue(np.array_equal(self.form.image, colored_equalized_image))
+
+
+    def test_apply_histogram_equalization_03(self):
+        '''
+        检查直方图均值化是否可以正常执行，图片大小557*373
+        '''
+
+        print('test apply histogram equalization begin')
+
+        self.form.setWindowTitle('测试案例 apply histogram equalization')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/10.jpeg')
+
+        self.form.image = image
+
+        self.form.apply_histogram_equalization()
+
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        equalized_image = cv2.equalizeHist(gray_image)
+        colored_equalized_image = cv2.cvtColor(equalized_image, cv2.COLOR_GRAY2BGR)
+        self.assertTrue(np.array_equal(self.form.image, colored_equalized_image))
+
+    # @patch('run.QInputDialog.getDouble')
+    # def test_apply_linear_transform_01(self, mock_getDouble):
+    #     '''
+    #     测试能否正确执行线性变化
+    #     '''
+    #
+    #     print('test apply_linear_transform begin')
+    #
+    #     self.form.setWindowTitle('测试案例 apply_linear_transform_01')
+    #
+    #     image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+    #
+    #     self.form.image = image
+    #
+    #     def getDouble_side_effect(*args):
+    #         if args[2] == 'Enter alpha value:':
+    #             return (1.5, True)
+    #         elif args[2] == 'Enter beta value:':
+    #             return (2.0, True)
+    #
+    #     mock_getDouble.side_effect = getDouble_side_effect
+    #
+    #     self.form.apply_linear_transform()
+    #
+    #     transformed_image = cv2.convertScaleAbs(image, alpha=1.5, beta=2.0)
+    #     print(image)
+    #     print(self.form.image)
+    #     self.assertTrue(np.array_equal(self.form.image, transformed_image))
+
+
+    @patch('run.QInputDialog.getDouble')
+    def test_apply_gamma_transform_01(self, mock_getDouble):
+        '''
+        测试gamma变化能否正确执行
+        '''
+
+        print('test apply_gamma_transform begin')
+
+        self.form.setWindowTitle('测试案例 apply_gamma_transform_01')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        mock_getDouble.return_value = (1.5, True)
+
+        self.form.apply_gamma_transform()
+
+        gamma_corrected = np.power(image / 255.0, 1.5)
+        expected_image = (gamma_corrected * 255).astype(np.uint8)
+
+        self.assertTrue(np.array_equal(self.form.image, expected_image))
+
+
+    @patch('run.QInputDialog.getDouble')
+    def test_apply_gamma_transform_02(self, mock_getDouble):
+        '''
+        测试在输入负数时能否正确执行gamma变化
+        '''
+
+        print('test apply_gamma_transform begin')
+
+        self.form.setWindowTitle('测试案例 apply_gamma_transform_02')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        mock_getDouble.return_value = (-5.0, True)
+
+        self.form.apply_gamma_transform()
+
+        gamma_corrected = np.power(image / 255.0, -5.0)
+        expected_image = (gamma_corrected * 255).astype(np.uint8)
+
+        self.assertTrue(np.array_equal(self.form.image, expected_image))
+
+
+    @patch('run.QInputDialog.getDouble')
+    def test_apply_gamma_transform_03(self, mock_getDouble):
+        '''
+        测试在输入整数时能否正确执行gamma变化
+        '''
+
+        print('test apply_gamma_transform begin')
+
+        self.form.setWindowTitle('测试案例 apply_gamma_transform_03')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        mock_getDouble.return_value = (15, True)
+
+        self.form.apply_gamma_transform()
+
+        gamma_corrected = np.power(image / 255.0, 15)
+        expected_image = (gamma_corrected * 255).astype(np.uint8)
+
+        self.assertTrue(np.array_equal(self.form.image, expected_image))
+
+
+    @patch('run.QMessageBox.warning')
+    def test_start_conv_01(self, mock_warning):
+        '''
+        测试卷积能否正确执行
+        '''
+
+        print('test start_conv begin')
+
+        self.form.setWindowTitle('测试案例 start_conv_01')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        self.form.ui.k1.setText('1')
+        self.form.ui.k2.setText('2')
+        self.form.ui.k3.setText('3')
+        self.form.ui.k4.setText('4')
+        self.form.ui.k5.setText('5')
+        self.form.ui.k6.setText('6')
+        self.form.ui.k7.setText('7')
+        self.form.ui.k8.setText('8')
+        self.form.ui.k9.setText('9')
+
+        self.form.start_conv()
+
+        mock_warning.assert_not_called()
+
+        conv_k = np.array([[1, 2, 3],
+                           [4, 5, 6],
+                           [7, 8, 9]], dtype=np.float32)
+
+        expected_image = cv2.filter2D(image, cv2.CV_32F, conv_k)
+        expected_image = cv2.convertScaleAbs(expected_image)
+
+        self.assertTrue(np.array_equal(self.form.image, expected_image))
+
+
+    @patch('run.QMessageBox.warning')
+    def test_start_conv_02(self, mock_warning):
+        '''
+        测试在输入负数时能否正确执行卷积
+        '''
+
+        print('test start_conv begin')
+
+        self.form.setWindowTitle('测试案例 start_conv_02')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        self.form.ui.k1.setText('-1')
+        self.form.ui.k2.setText('-2')
+        self.form.ui.k3.setText('-3')
+        self.form.ui.k4.setText('-4')
+        self.form.ui.k5.setText('5')
+        self.form.ui.k6.setText('6')
+        self.form.ui.k7.setText('7')
+        self.form.ui.k8.setText('8')
+        self.form.ui.k9.setText('9')
+
+        self.form.start_conv()
+
+        mock_warning.assert_not_called()
+
+        conv_k = np.array([[-1, -2, -3],
+                           [-4, 5, 6],
+                           [7, 8, 9]], dtype=np.float32)
+
+        expected_image = cv2.filter2D(image, cv2.CV_32F, conv_k)
+        expected_image = cv2.convertScaleAbs(expected_image)
+
+        self.assertTrue(np.array_equal(self.form.image, expected_image))
+
+
+    @patch('run.QMessageBox.warning')
+    def test_start_conv_03(self, mock_warning):
+        '''
+        测试在输入小数时能否正确执行卷积
+        '''
+
+        print('test start_conv begin')
+
+        self.form.setWindowTitle('测试案例 start_conv_03')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        self.form.ui.k1.setText('1.3')
+        self.form.ui.k2.setText('2.2')
+        self.form.ui.k3.setText('3.1')
+        self.form.ui.k4.setText('4')
+        self.form.ui.k5.setText('5')
+        self.form.ui.k6.setText('6')
+        self.form.ui.k7.setText('7')
+        self.form.ui.k8.setText('8')
+        self.form.ui.k9.setText('9')
+
+        self.form.start_conv()
+
+        mock_warning.assert_not_called()
+
+        conv_k = np.array([[1.3, 2.2, 3.1],
+                           [4, 5, 6],
+                           [7, 8, 9]], dtype=np.float32)
+
+        expected_image = cv2.filter2D(image, cv2.CV_32F, conv_k)
+        expected_image = cv2.convertScaleAbs(expected_image)
+
+        self.assertTrue(np.array_equal(self.form.image, expected_image))
+
+
+    @patch('run.QMessageBox.warning')
+    def test_start_conv_04(self, mock_warning):
+        '''
+        测试在输入非法卷积核时能否弹出警告对话框
+        '''
+
+        print('test start_conv begin')
+
+        self.form.setWindowTitle('测试案例 start_conv_04')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.image = image
+
+        self.form.ui.k1.setText('x')
+        self.form.ui.k2.setText('2')
+        self.form.ui.k3.setText('3')
+        self.form.ui.k4.setText('4')
+        self.form.ui.k5.setText('5')
+        self.form.ui.k6.setText('6')
+        self.form.ui.k7.setText('7')
+        self.form.ui.k8.setText('8')
+        self.form.ui.k9.setText('9')
+
+        self.form.start_conv()
+
+        mock_warning.assert_called_once_with(self.form, "警告", "卷积核参数请输入阿拉伯数字！", QMessageBox.Cancel)
+
+
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_upload_image(self, mock_getOpenFileName):
+        '''
+        测试在窗口2中能否正确加载文件,并且正确处理,保存在对应路径下
+        '''
+        print('test upload_image begin')
+
+        self.form.setWindowTitle('开始测试用例 test_upload_image')
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/1.jpg', '')
+
+        image = cv2.imread(r'E:/imageprocessing/processing/car/1.jpg')
+
+        self.form.upload_img()
+
+        expected_image = cv2.imread("./images/tmp_upload.jpg")
+        self.assertTrue(np.array_equal(image, expected_image))
+
+        resize_scale = self.form.output_size / image.shape[0]
+        expected_image = cv2.resize(image, (0, 0), fx=resize_scale, fy=resize_scale)
+
+        resized_image = cv2.imread("./images/upload_show_result.jpg")
+        self.assertEqual(resized_image.shape, expected_image.shape)
+
+
+    @patch('run.QMessageBox.warning')
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_detect_img_01(self, mock_getOpenFileName, mock_warning):
+        '''
+        检查detect——img功能是否可以正确保存中间图像到指定路径，在选定图像的情况下，是否不会弹出警告
+        检查是否可以正确识别选定图像的车牌号
+        检查该功能是否可以在指定时间(1.1s)内完成
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_01')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/1.jpg', '')
+
+
+        self.form.model_load()
+        self.form.upload_img()
+
+        start_time = time.time()
+        self.form.detect_img()
+
+        #判断是否保存了中间图像和结果图像
+        path1 = './m[0].png'
+        path2 = './m[1].png'
+        path3 = './m[2].png'
+        path4 = './m[5].png'
+        path5 = './images/single_result.jpg'
+        self.assertTrue(os.path.exists(path1))
+        self.assertTrue(os.path.exists(path2))
+        self.assertTrue(os.path.exists(path3))
+        self.assertTrue(os.path.exists(path4))
+        self.assertTrue(os.path.exists(path5))
+
+        #判断是否没有弹出警告框
+
+        mock_warning.assert_not_called()
+
+        #判断车牌号是否正确
+        expected_license_plates = ['粤FQK883']
+
+
+        for index in self.form.list:
+
+            # 检验当前车牌号是否正确
+            current_license_plate = self.form.ui.license_plate.text()
+            self.assertIn(current_license_plate, expected_license_plates)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
+        max_execution_time = 1.1
+        self.assertLessEqual(execution_time, max_execution_time, "Execution time exceeds the limit")
+
+
+    def test_detect_img_02(self):
+        '''
+        检查在没有选定图像的情况下，该功能是否能正确弹出警告对话框
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_02')
+
+        self.form.img2predict = ""
+
+        self.form.model_load()
+        self.form.detect_img()
+
+        self.assertTrue(QMessageBox.warning.called)
+        self.assertEqual(QMessageBox.warning.call_args[0][2], "请先上传图片再进行检测")
+
+
+    @patch('run.QMessageBox.warning')
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_detect_img_03(self, mock_getOpenFileName, mock_warning):
+        '''
+        检查是否可以识别模糊图像的车牌号
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_03')
+
+        mock_getOpenFileName.return_value = (r'E:/unittest/1.jpg', '')
+
+
+        self.form.model_load()
+        self.form.upload_img()
+
+        start_time = time.time()
+        self.form.detect_img()
+
+        #判断是否保存了中间图像和结果图像
+        path1 = './m[0].png'
+        path2 = './m[1].png'
+        path3 = './m[2].png'
+        path4 = './m[5].png'
+        path5 = './images/single_result.jpg'
+        self.assertTrue(os.path.exists(path1))
+        self.assertTrue(os.path.exists(path2))
+        self.assertTrue(os.path.exists(path3))
+        self.assertTrue(os.path.exists(path4))
+        self.assertTrue(os.path.exists(path5))
+
+        #判断是否没有弹出警告框
+
+        mock_warning.assert_not_called()
+
+        #判断车牌号是否正确
+        expected_license_plates = ['粤FQK883']
+
+
+        for index in self.form.list:
+
+            # 检验当前车牌号是否正确
+            current_license_plate = self.form.ui.license_plate.text()
+            try:
+                self.assertIn(current_license_plate, expected_license_plates)
+            except AssertionError:
+                pass
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
+        max_execution_time = 1.1
+        self.assertLessEqual(execution_time, max_execution_time, "Execution time exceeds the limit")
+
+
+    @patch('run.QMessageBox.warning')
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_detect_img_04(self, mock_getOpenFileName, mock_warning):
+        '''
+        检查是否可以正确识别旋转后图像的车牌号
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_01')
+
+        mock_getOpenFileName.return_value = (r'E:/unittest/2.jpg', '')
+
+
+        self.form.model_load()
+        self.form.upload_img()
+
+        start_time = time.time()
+        self.form.detect_img()
+
+        #判断是否保存了中间图像和结果图像
+        path1 = './m[0].png'
+        path2 = './m[1].png'
+        path3 = './m[2].png'
+        path4 = './m[5].png'
+        path5 = './images/single_result.jpg'
+        self.assertTrue(os.path.exists(path1))
+        self.assertTrue(os.path.exists(path2))
+        self.assertTrue(os.path.exists(path3))
+        self.assertTrue(os.path.exists(path4))
+        self.assertTrue(os.path.exists(path5))
+
+        #判断是否没有弹出警告框
+
+        mock_warning.assert_not_called()
+
+        #判断车牌号是否正确
+        expected_license_plates = ['粤FQK883']
+
+
+        for index in self.form.list:
+
+            # 检验当前车牌号是否正确
+            current_license_plate = self.form.ui.license_plate.text()
+            self.assertIn(current_license_plate, expected_license_plates)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
+        max_execution_time = 1.1
+        self.assertLessEqual(execution_time, max_execution_time, "Execution time exceeds the limit")
+
+
+    @patch('run.QMessageBox.warning')
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_detect_img_05(self, mock_getOpenFileName, mock_warning):
+        '''
+        检查是否可以正确识别侧面车牌视角图像的车牌号
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_05')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/5.jpg', '')
+
+
+        self.form.model_load()
+        self.form.upload_img()
+
+        start_time = time.time()
+        self.form.detect_img()
+
+        #判断是否保存了中间图像和结果图像
+        path1 = './m[0].png'
+        path2 = './m[1].png'
+        path3 = './m[2].png'
+        path4 = './m[5].png'
+        path5 = './images/single_result.jpg'
+        self.assertTrue(os.path.exists(path1))
+        self.assertTrue(os.path.exists(path2))
+        self.assertTrue(os.path.exists(path3))
+        self.assertTrue(os.path.exists(path4))
+        self.assertTrue(os.path.exists(path5))
+
+        #判断是否没有弹出警告框
+
+        mock_warning.assert_not_called()
+
+        #判断车牌号是否正确
+        expected_license_plates = ['粤FQK883', '黑AFK640']
+
+
+        for index in self.form.list:
+
+            # 检验当前车牌号是否正确
+            current_license_plate = self.form.ui.license_plate.text()
+            self.assertIn(current_license_plate, expected_license_plates)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
+        max_execution_time = 1.1
+        self.assertLessEqual(execution_time, max_execution_time, "Execution time exceeds the limit")
+
+
+    @patch('run.QMessageBox.warning')
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_detect_img_06(self, mock_getOpenFileName, mock_warning):
+        '''
+        检查是否可以正确识别车牌占图像比例较小的图像的车牌号
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_01')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/7.jpeg', '')
+
+
+        self.form.model_load()
+        self.form.upload_img()
+
+        start_time = time.time()
+        self.form.detect_img()
+
+        #判断是否保存了中间图像和结果图像
+        path1 = './m[0].png'
+        path2 = './m[1].png'
+        path3 = './m[2].png'
+        path4 = './m[5].png'
+        path5 = './images/single_result.jpg'
+        self.assertTrue(os.path.exists(path1))
+        self.assertTrue(os.path.exists(path2))
+        self.assertTrue(os.path.exists(path3))
+        self.assertTrue(os.path.exists(path4))
+        self.assertTrue(os.path.exists(path5))
+
+        #判断是否没有弹出警告框
+
+        mock_warning.assert_not_called()
+
+        #判断车牌号是否正确
+        expected_license_plates = ['豫PQK588']
+
+
+        for index in self.form.list:
+
+            # 检验当前车牌号是否正确
+            current_license_plate = self.form.ui.license_plate.text()
+            self.assertIn(current_license_plate, expected_license_plates)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
+        max_execution_time = 1.1
+        self.assertLessEqual(execution_time, max_execution_time, "Execution time exceeds the limit")
+
+
+    @patch('run.QMessageBox.warning')
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_detect_img_07(self, mock_getOpenFileName, mock_warning):
+        '''
+        检查是否可以正确识别绿色车牌图像的车牌号
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_07')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/8.jpg', '')
+
+
+        self.form.model_load()
+        self.form.upload_img()
+
+        start_time = time.time()
+        self.form.detect_img()
+
+        #判断是否保存了中间图像和结果图像
+        path1 = './m[0].png'
+        path2 = './m[1].png'
+        path3 = './m[2].png'
+        path4 = './m[5].png'
+        path5 = './images/single_result.jpg'
+        self.assertTrue(os.path.exists(path1))
+        self.assertTrue(os.path.exists(path2))
+        self.assertTrue(os.path.exists(path3))
+        self.assertTrue(os.path.exists(path4))
+        self.assertTrue(os.path.exists(path5))
+
+        #判断是否没有弹出警告框
+
+        mock_warning.assert_not_called()
+
+        #判断车牌号是否正确
+        expected_license_plates = ['辽AF07289']
+
+
+        for index in self.form.list:
+
+            # 检验当前车牌号是否正确
+            current_license_plate = self.form.ui.license_plate.text()
+            self.assertIn(current_license_plate, expected_license_plates)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
+        max_execution_time = 1.1
+        self.assertLessEqual(execution_time, max_execution_time, "Execution time exceeds the limit")
+
+
+    @patch('run.QMessageBox.warning')
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_detect_img_08(self, mock_getOpenFileName, mock_warning):
+        '''
+        检查是否可以正确识别有其他文字干扰情况下图像的车牌号
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_07')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/17.jpg', '')
+
+
+        self.form.model_load()
+        self.form.upload_img()
+
+        start_time = time.time()
+        self.form.detect_img()
+
+        #判断是否保存了中间图像和结果图像
+        path1 = './m[0].png'
+        path2 = './m[1].png'
+        path3 = './m[2].png'
+        path4 = './m[5].png'
+        path5 = './images/single_result.jpg'
+        self.assertTrue(os.path.exists(path1))
+        self.assertTrue(os.path.exists(path2))
+        self.assertTrue(os.path.exists(path3))
+        self.assertTrue(os.path.exists(path4))
+        self.assertTrue(os.path.exists(path5))
+
+        #判断是否没有弹出警告框
+
+        mock_warning.assert_not_called()
+
+        #判断车牌号是否正确
+        expected_license_plates = ['浙G00001']
+
+
+        for index in self.form.list:
+
+            # 检验当前车牌号是否正确
+            current_license_plate = self.form.ui.license_plate.text()
+            self.assertIn(current_license_plate, expected_license_plates)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
+        max_execution_time = 1.1
+        self.assertLessEqual(execution_time, max_execution_time, "Execution time exceeds the limit")
+
+
+    @patch('run.QMessageBox.warning')
+    @patch('run.QFileDialog.getOpenFileName')
+    def test_detect_img_09(self, mock_getOpenFileName, mock_warning):
+        '''
+        检查是否可以正确识别拥有多个车牌图像的车牌号
+        '''
+
+        print('test detect_img begin')
+
+        self.form.setWindowTitle('开始测试用例 test_detect_img_07')
+
+        mock_getOpenFileName.return_value = (r'E:/imageprocessing/processing/car/20.jpg', '')
+
+
+        self.form.model_load()
+        self.form.upload_img()
+
+        start_time = time.time()
+        self.form.detect_img()
+
+        #判断是否保存了中间图像和结果图像
+        path1 = './m[0].png'
+        path2 = './m[1].png'
+        path3 = './m[2].png'
+        path4 = './m[5].png'
+        path5 = './images/single_result.jpg'
+        self.assertTrue(os.path.exists(path1))
+        self.assertTrue(os.path.exists(path2))
+        self.assertTrue(os.path.exists(path3))
+        self.assertTrue(os.path.exists(path4))
+        self.assertTrue(os.path.exists(path5))
+
+        #判断是否没有弹出警告框
+
+        mock_warning.assert_not_called()
+
+        #判断车牌号是否正确
+        expected_license_plates = ['晋AD19990']
+
+
+        for index in self.form.list:
+
+            # 检验当前车牌号是否正确
+            current_license_plate = self.form.ui.license_plate.text()
+            self.assertIn(current_license_plate, expected_license_plates)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time: {execution_time} seconds")
+        max_execution_time = 1.1
+        self.assertLessEqual(execution_time, max_execution_time, "Execution time exceeds the limit")
+
+
+if __name__=='__main__':
+    unittest.main()
